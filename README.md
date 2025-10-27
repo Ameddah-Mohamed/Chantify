@@ -57,11 +57,9 @@ MONGODB_URI=I-will-send-it-to-you
 JWT_SECRET=your_jwt_secret_key
 
 
-Replace the placeholder values with your actual configuration.
-
 ### 4. Run the Development Server
 
-Start the development server with auto-reload enabled:
+Start the server:
 ```bash
 npm run dev
 ```
@@ -72,7 +70,6 @@ The server will start on the port specified in your `.env` file (default: 8000).
 ## Available Scripts
 
 - `npm run dev` - Starts the development server with nodemon (auto-reload on file changes)
-- `npm start` - Starts the production server
 
 ## API Endpoints
 
@@ -88,11 +85,6 @@ The application includes the following route groups:
 - **Company Model** - Company information
 - **Invitation Model** - Company invitation system
 
-## Development Notes
-
-- The project uses ES6 modules (`"type": "module"` in package.json)
-- Nodemon is configured for development to automatically restart the server on file changes
-- Protected routes use JWT authentication middleware
 
 ## Troubleshooting
 
