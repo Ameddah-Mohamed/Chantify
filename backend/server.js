@@ -8,6 +8,7 @@ import connectDB from "./db/connection.js";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js"; 
 
 dotenv.config();
 
@@ -23,13 +24,14 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/tasks", taskRoutes); // 
 
 // Health check route
 app.get("/api/health", (req, res) => {
   res.status(200).json({ message: "Server is running!" });
 });
 
-// 404 handler - FIXED: Use a proper path
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
@@ -41,6 +43,6 @@ app.use((error, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
   connectDB();
 });
