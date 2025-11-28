@@ -1,0 +1,300 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Mail, Lock, User, Phone, Building2, Briefcase } from 'lucide-react';
+
+const SignUp = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    role: 'worker',
+    companyName: '',
+    companyEmail: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      setSuccess(data.message);
+      
+      // If admin, redirect to dashboard after 2 seconds
+      if (formData.role === 'admin') {
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-8">
+      <div className="max-w-md w-full">
+        {/* Logo/Brand */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#f3ae3f] rounded-xl mb-3 shadow-lg">
+            <Building2 className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Chantify</h1>
+          <p className="text-sm text-gray-600 mt-1">Construction workforce management</p>
+        </div>
+
+        {/* Sign Up Form Card */}
+        <div className="bg-white rounded-xl shadow-xl p-6">
+          <div className="mb-5">
+            <h2 className="text-xl font-bold text-gray-900">Create Account</h2>
+            <p className="text-sm text-gray-600 mt-1">Join Chantify today</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-lg">
+              <p className="text-red-700 text-xs">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 rounded-lg">
+              <p className="text-green-700 text-xs">{success}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Role Selection */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Account Type
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: 'worker' })}
+                  className={`p-2.5 rounded-lg border-2 transition-all ${
+                    formData.role === 'worker'
+                      ? 'border-[#f3ae3f] bg-[#f3ae3f]/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <User className="w-4 h-4 mx-auto mb-1" />
+                  <span className="text-xs font-medium">Worker</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: 'admin' })}
+                  className={`p-2.5 rounded-lg border-2 transition-all ${
+                    formData.role === 'admin'
+                      ? 'border-[#f3ae3f] bg-[#f3ae3f]/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 mx-auto mb-1" />
+                  <span className="text-xs font-medium">Administrator</span>
+                </button>
+              </div>
+            </div>
+
+            {/* First Name & Last Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  First Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                    placeholder="Mohamed"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  Last Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                    placeholder="Ameddah"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Phone
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                  placeholder="+213 555 123 456"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={6}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+            </div>
+
+            {/* Conditional Fields Based on Role */}
+            {formData.role === 'admin' ? (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  Company Name
+                </label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                    placeholder="Construction ABC"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  Company Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    name="companyEmail"
+                    value={formData.companyEmail}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f] focus:border-transparent transition-all"
+                    placeholder="company@example.com"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Enter the company email to apply
+                </p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#f3ae3f] text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-[#e09d2f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            >
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
+
+          {/* Sign In Link */}
+          <div className="mt-5 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link
+                to="/signin"
+                className="text-[#f3ae3f] font-semibold hover:underline"
+              >
+                Sign In
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-500 text-xs mt-6">
+          © 2025 Chantify. All rights reserved.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default SignUp;

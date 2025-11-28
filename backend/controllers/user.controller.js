@@ -1,3 +1,5 @@
+//user.controller.js
+
 import User from "../models/user.model.js";
 
 // Get logged-in user profile
@@ -27,7 +29,7 @@ export const updateProfile = async (req, res) => {
         'personalInfo.phone': phone
       },
       { new: true, runValidators: true }
-    ).select('-password -invitationToken')
+    ).select('-password')
      .populate('companyId');
 
     res.status(200).json({
