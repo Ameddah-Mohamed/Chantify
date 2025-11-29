@@ -1,1 +1,12 @@
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Work Sans', sans-serif;
+}
+
+body { font-family: var(--font-display); }
