@@ -1,5 +1,9 @@
 export default function AssignedTeam() {
-const workers = ["a1.jpg", "a2.jpg", "a3.jpg"]; // replace URLs
+const workers = [
+  "https://ui-avatars.com/api/?name=John+Doe&background=3b82f6&color=fff",
+  "https://ui-avatars.com/api/?name=Jane+Smith&background=10b981&color=fff",
+  "https://ui-avatars.com/api/?name=Mike+Johnson&background=f59e0b&color=fff"
+];
 
 
 return (
