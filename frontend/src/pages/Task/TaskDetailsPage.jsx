@@ -1,4 +1,3 @@
-import TopNavBar from "../../components/TopNavBar";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import TaskHeader from "../../components/TaskHeader";
 import TaskDescriptionCard from "../../components/TaskDescriptionCard";
@@ -6,11 +5,9 @@ import TaskDetailsCard from "../../components/TaskDetailsCard";
 import AssignedTeam from "../../components/AssignedTeam";
 import ProofOfProgress from "../../components/ProofOfProgress";
 
-
 export default function TaskDetailsPage() {
-return (
-<div className="font-display bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 min-h-screen">
-<TopNavBar />
+  return (
+    <div className="font-display bg-gray-50 text-gray-900 min-h-screen">
 
 
 <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -30,9 +27,9 @@ return (
 <ProofOfProgress />
 
 
-<button className="w-full bg-success text-white font-bold py-3 px-4 rounded-lg hover:bg-success/90 flex items-center justify-center gap-2">
+<button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow-md">
 <span className="material-symbols-outlined">check_circle</span>
-Complete Task
+Submit Work
 </button>
 </div>
 </div>

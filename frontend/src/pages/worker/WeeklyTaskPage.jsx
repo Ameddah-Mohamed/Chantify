@@ -4,7 +4,7 @@ import TaskCard from "../../components/TaskCard";
 
 export default function WeeklyTaskPage() {
 	return (
-		<div className="p-4">
+		<div className="p-4 min-h-screen bg-gray-50">
 			<main className="max-w-7xl mx-auto">
 				<DaySection day="Wednesday, 23" highlight>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -12,7 +12,7 @@ export default function WeeklyTaskPage() {
 							title="Site Safety Inspection"
 							project="General Site"
 							status="In Progress"
-							statusColor="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+							statusColor="bg-orange-100 text-orange-800"
 							buttonLabel="Details"
 							buttonColor="bg-orange-500 hover:bg-orange-600"
 						/>
@@ -20,15 +20,15 @@ export default function WeeklyTaskPage() {
 							title="Plumbing Rough-in - Lvl 5"
 							project="Skyview Tower"
 							status="Not Started"
-							statusColor="bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+							statusColor="bg-gray-200 text-gray-600"
 							buttonLabel="Start"
-							buttonColor="bg-primary"
+							buttonColor="bg-blue-600 hover:bg-blue-700"
 						/>
 						<TaskCard
 							title="Crane Maintenance"
 							project="Heavy Machinery"
 							status="Urgent"
-							statusColor="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+							statusColor="bg-red-100 text-red-800"
 							buttonLabel="Start"
 							buttonColor="bg-red-600 hover:bg-red-700"
 							border="border-l-4 border-red-500"
@@ -38,7 +38,7 @@ export default function WeeklyTaskPage() {
 
 				{/* Thursday */}
 				<DaySection day="Thursday, 24">
-					<p className="text-slate-400 dark:text-slate-500 text-sm py-4">No tasks scheduled.</p>
+					<p className="text-gray-500 text-sm py-4">No tasks scheduled.</p>
 				</DaySection>
 
 				{/* Friday */}
@@ -48,21 +48,21 @@ export default function WeeklyTaskPage() {
 							title="Window Installation - Lvl 9"
 							project="Skyview Tower"
 							status="Not Started"
-							statusColor="bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+							statusColor="bg-gray-200 text-gray-600"
 							buttonLabel="Start"
-							buttonColor="bg-primary"
+							buttonColor="bg-blue-600 hover:bg-blue-700"
 						/>
 					</div>
 				</DaySection>
 
 				{/* Saturday */}
 				<DaySection day="Saturday, 26">
-					<p className="text-slate-400 dark:text-slate-500 text-sm py-4">No tasks scheduled.</p>
+					<p className="text-gray-500 text-sm py-4">No tasks scheduled.</p>
 				</DaySection>
 
 				{/* Sunday */}
 				<DaySection day="Sunday, 27">
-					<p className="text-slate-400 dark:text-slate-500 text-sm py-4">No tasks scheduled.</p>
+					<p className="text-gray-500 text-sm py-4">No tasks scheduled.</p>
 				</DaySection>
 			</main>
 		</div>

@@ -19,13 +19,15 @@ createRoot(document.getElementById('root')).render(
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Routes WITH Navbar (Protected pages) */}
+        {/* Test Routes - Your Created Pages (No Auth Required) */}
+        <Route path="/worker/weekly" element={<WeeklyWorkerPage />} />
+        <Route path="/tasks" element={<TaskWeeklyPage />} />
+        <Route path="/tasks/:id" element={<TaskDetailsPage />} />
+
+        {/* Routes WITH Navbar (Protected pages - require backend) */}
         <Route element={<Layout />}>
           <Route path="/" element={<App />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/worker/weekly" element={<WeeklyWorkerPage />} />
-          <Route path="/tasks" element={<TaskWeeklyPage />} />
-          <Route path="/tasks/:id" element={<TaskDetailsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

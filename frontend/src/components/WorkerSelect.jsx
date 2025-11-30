@@ -12,23 +12,23 @@ export default function WorkerSelect() {
 
   return (
     <div className="relative">
-      <label className="block text-base font-medium pb-2">Assign Workers</label>
+      <label className="block text-base font-medium text-gray-700 pb-2">Assign Workers</label>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between h-14 p-[15px] rounded-lg border border-slate-300 bg-slate-50 dark:bg-slate-800"
+        className="w-full flex items-center justify-between h-14 px-4 rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 transition focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
       >
-        <span className="text-slate-400">Select one or more workers</span>
-        <span className="material-symbols-outlined">expand_more</span>
+        <span className="text-gray-500">Select one or more workers</span>
+        <span className="material-symbols-outlined text-gray-400">expand_more</span>
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 w-full z-20 bg-white dark:bg-slate-800 border rounded-lg shadow-lg">
-          <div className="p-2 border-b">
+        <div className="absolute top-full mt-2 w-full z-20 bg-white border border-gray-200 rounded-lg shadow-lg">
+          <div className="p-2 border-b border-gray-200">
             <input
               type="search"
               placeholder="Search workers..."
-              className="form-input w-full rounded-md bg-slate-100 dark:bg-slate-700"
+              className="w-full px-3 py-2 rounded-md bg-gray-50 border border-gray-300 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
             />
           </div>
 
@@ -36,11 +36,11 @@ export default function WorkerSelect() {
             {workers.map((w, i) => (
               <li
                 key={i}
-                className="flex items-center gap-3 p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md cursor-pointer"
+                className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md cursor-pointer transition"
               >
-                <input type="checkbox" className="form-checkbox text-primary" />
-                <img src={w.img} className="h-8 w-8 rounded-full object-cover" />
-                <span className="text-sm font-medium">{w.name}</span>
+                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <img src={w.img} className="h-8 w-8 rounded-full object-cover bg-gray-200" />
+                <span className="text-sm font-medium text-gray-900">{w.name}</span>
               </li>
             ))}
           </ul>
