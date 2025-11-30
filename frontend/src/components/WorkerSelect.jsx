@@ -4,10 +4,10 @@ export default function WorkerSelect() {
   const [open, setOpen] = useState(false);
 
   const workers = [
-    { name: "John Doe", img: "https://lh3.googleusercontent.com/aida-public/..." },
-    { name: "Jane Smith", img: "https://lh3.googleusercontent.com/aida-public/..." },
-    { name: "Mike Johnson", img: "https://lh3.googleusercontent.com/aida-public/..." },
-    { name: "Emily Williams", img: "https://lh3.googleusercontent.com/aida-public/..." },
+    { name: "John Doe", img: "https://ui-avatars.com/api/?name=John+Doe&background=3b82f6&color=fff" },
+    { name: "Jane Smith", img: "https://ui-avatars.com/api/?name=Jane+Smith&background=10b981&color=fff" },
+    { name: "Mike Johnson", img: "https://ui-avatars.com/api/?name=Mike+Johnson&background=f59e0b&color=fff" },
+    { name: "Emily Williams", img: "https://ui-avatars.com/api/?name=Emily+Williams&background=8b5cf6&color=fff" },
   ];
 
   return (
