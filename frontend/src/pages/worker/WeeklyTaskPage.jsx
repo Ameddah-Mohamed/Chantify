@@ -5,7 +5,7 @@ import TaskCard from "../../components/TaskCard";
 export default function WeeklyTaskPage() {
 	return (
 		<div className="p-4 min-h-screen bg-gray-50">
-			<main className="max-w-7xl mx-auto">
+			<main className="max-w-7xl mx-auto space-y-6">
 				<DaySection day="Wednesday, 23" highlight>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<TaskCard
