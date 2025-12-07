@@ -7,9 +7,6 @@
   --font-family-display: 'Work Sans', sans-serif;
 }
 
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
-@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&display=swap");
-
 body { 
-  font-family: var(--font-family-display); 
+  font-family: 'Work Sans', sans-serif; 
 }

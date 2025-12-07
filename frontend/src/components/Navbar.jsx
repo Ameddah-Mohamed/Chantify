@@ -84,14 +84,8 @@ const Navbar = () => {
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Logo & Brand */}
+          {/* Empty space where logo was */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 bg-[#f3ae3f] rounded-lg flex items-center justify-center group-hover:bg-[#e09d2f] transition-colors">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">Chantify</span>
-            </Link>
           </div>
 
           {/* Desktop Navigation */}
