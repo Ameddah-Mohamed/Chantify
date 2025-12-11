@@ -1,70 +1,139 @@
-const Task = require("../models/Task");
+const Task = require('../models/task.model');
+const asyncHandler = require('express-async-handler');
 
-// GET /api/tasks - Get user's tasks
-exports.getTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find();
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+// @desc    Create a new task
+// @route   POST /api/tasks
+// @access  Private
+const createTask = asyncHandler(async (req, res) => {
+  const { companyId, assignedTo, title, description, project, dueDate } = req.body;
+  
+  // Get the user ID from the authenticated user (from protectRoute middleware)
+  const assignedBy = req.user._id;
+  
+  const task = await Task.create({
+    companyId,
+    assignedTo,
+    assignedBy,
+    title,
+    description,
+    project: project || 'General',
+    dueDate: dueDate || null,
+    status: 'todo'
+  });
+  
+  // Populate user details
+  const populatedTask = await Task.findById(task._id)
+    .populate('assignedTo', 'personalInfo.firstName personalInfo.lastName email')
+    .populate('assignedBy', 'personalInfo.firstName personalInfo.lastName');
+  
+  res.status(201).json({
+    success: true,
+    data: populatedTask
+  });
+});
 
-// POST /api/tasks - Create task (manager only)
-exports.createTask = async (req, res) => {
-  try {
-    const task = new Task(req.body);
-    await task.save();
-    res.status(201).json(task);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
+// @desc    Get all tasks for a company
+// @route   GET /api/tasks/company/:companyId
+// @access  Private
+const getCompanyTasks = asyncHandler(async (req, res) => {
+  const { companyId } = req.params;
+  
+  const tasks = await Task.find({ companyId })
+    .populate('assignedTo', 'personalInfo.firstName personalInfo.lastName email')
+    .populate('assignedBy', 'personalInfo.firstName personalInfo.lastName')
+    .sort({ createdAt: -1 });
+  
+  res.json({
+    success: true,
+    count: tasks.length,
+    data: tasks
+  });
+});
 
-// PUT /api/tasks/:taskId - Update task
-exports.updateTask = async (req, res) => {
-  try {
-    const task = await Task.findByIdAndUpdate(req.params.taskId, req.body, { new: true });
-    res.json(task);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
+// @desc    Get tasks assigned to a specific user
+// @route   GET /api/tasks/my-tasks
+// @access  Private
+const getMyTasks = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const companyId = req.user.companyId;
+  
+  const tasks = await Task.find({ 
+    companyId,
+    assignedTo: userId 
+  })
+    .populate('assignedBy', 'personalInfo.firstName personalInfo.lastName')
+    .sort({ dueDate: 1, createdAt: -1 });
+  
+  res.json({
+    success: true,
+    count: tasks.length,
+    data: tasks
+  });
+});
 
-// PUT /api/tasks/:taskId/status - Update task status
-exports.updateTaskStatus = async (req, res) => {
-  try {
-    const task = await Task.findByIdAndUpdate(
-      req.params.taskId,
-      { status: req.body.status },
-      { new: true }
-    );
-    res.json(task);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+// @desc    Update task status
+// @route   PUT /api/tasks/:id
+// @access  Private
+const updateTask = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status, completionNotes } = req.body;
+  
+  const updateData = { status };
+  
+  // If marking as completed, set completion date
+  if (status === 'completed') {
+    updateData.completedAt = new Date();
+    updateData.completionNotes = completionNotes || '';
   }
-};
+  
+  const task = await Task.findByIdAndUpdate(
+    id,
+    updateData,
+    { new: true, runValidators: true }
+  ).populate('assignedTo', 'personalInfo.firstName personalInfo.lastName');
+  
+  if (!task) {
+    res.status(404);
+    throw new Error('Task not found');
+  }
+  
+  res.json({
+    success: true,
+    data: task
+  });
+});
 
-// PUT /api/tasks/:taskId/complete - Mark task complete
-exports.markTaskComplete = async (req, res) => {
-  try {
-    const task = await Task.findByIdAndUpdate(
-      req.params.taskId,
-      { status: "completed", completedAt: new Date() },
-      { new: true }
-    );
-    res.json(task);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+// @desc    Delete a task
+// @route   DELETE /api/tasks/:id
+// @access  Private (Admin only)
+const deleteTask = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  const task = await Task.findById(id);
+  
+  if (!task) {
+    res.status(404);
+    throw new Error('Task not found');
   }
-};
+  
+  // Check if user is admin or assigned the task
+  if (req.user.role !== 'admin' && task.assignedBy.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to delete this task');
+  }
+  
+  await task.deleteOne();
+  
+  res.json({
+    success: true,
+    message: 'Task deleted successfully'
+  });
+});
 
-// GET /api/tasks/team - Get team tasks (manager)
-exports.getTeamTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find().populate("assignedTo assignedBy");
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+module.exports = {
+  createTask,
+  getCompanyTasks,
+  getMyTasks,
+  updateTask,
+  deleteTask
 };

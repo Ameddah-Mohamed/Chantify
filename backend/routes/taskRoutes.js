@@ -1,23 +1,29 @@
-import express from "express";
-import {
-  getTasks,
-  createTask,
-  updateTask,
-  updateTaskStatus,
-  markTaskComplete,
-  getTeamTasks,
-} from "../controllers/task.controller.js";
-
-import protectRoute from "../middleware/protectRoute.js";
-
+const express = require('express');
 const router = express.Router();
+const {
+  createTask,
+  getCompanyTasks,
+  getMyTasks,
+  updateTask,
+  deleteTask
+} = require('../controllers/task.controller');
+const { protectRoute } = require('../middleware/protectRoute');
 
 // All routes are protected
-router.get("/", protectRoute, getTasks);
-router.post("/", protectRoute, createTask);
-router.put("/:taskId", protectRoute, updateTask);
-router.put("/:taskId/status", protectRoute, updateTaskStatus);
-router.put("/:taskId/complete", protectRoute, markTaskComplete);
-router.get("/team", protectRoute, getTeamTasks);
+router.use(protectRoute);
 
-export default router;
+// Routes
+router.route('/')
+  .post(createTask);
+
+router.route('/company/:companyId')
+  .get(getCompanyTasks);
+
+router.route('/my-tasks')
+  .get(getMyTasks);
+
+router.route('/:id')
+  .put(updateTask)
+  .delete(deleteTask);
+
+module.exports = router;
