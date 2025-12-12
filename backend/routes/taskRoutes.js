@@ -3,26 +3,21 @@ const router = express.Router();
 const {
   createTask,
   getCompanyTasks,
-  getMyTasks,
+  getAllTasks,
   updateTask,
   deleteTask
 } = require('../controllers/task.controller');
-const { protectRoute } = require('../middleware/protectRoute');
 
-// All routes are protected
-router.use(protectRoute);
-
-// Routes
+// Routes (no authentication required)
 router.route('/')
+  .get(getAllTasks)
   .post(createTask);
 
 router.route('/company/:companyId')
   .get(getCompanyTasks);
 
-router.route('/my-tasks')
-  .get(getMyTasks);
-
 router.route('/:id')
+  .get(getAllTasks)
   .put(updateTask)
   .delete(deleteTask);
 

@@ -9,9 +9,10 @@ dotenv.config();
 
 // Import routes
 const taskRoutes = require('./routes/taskRoutes');
-const authRoutes = require('./routes/authRoutes');
-const companyRoutes = require('./routes/companyRoutes');
-const userRoutes = require('./routes/userRoutes');
+const simpleUserRoutes = require('./routes/simpleUserRoutes');
+// const authRoutes = require('./routes/authRoutes');
+// const companyRoutes = require('./routes/companyRoutes');
+// const userRoutes = require('./routes/userRoutes');
 
 // Connect to MongoDB
 connectDB();
@@ -29,10 +30,11 @@ app.use(cookieParser());
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', authRoutes);
+// app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', simpleUserRoutes);
+// app.use('/api/companies', companyRoutes);
+// app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

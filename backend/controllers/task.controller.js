@@ -3,44 +3,33 @@ const asyncHandler = require('express-async-handler');
 
 // @desc    Create a new task
 // @route   POST /api/tasks
-// @access  Private
+// @access  Public
 const createTask = asyncHandler(async (req, res) => {
-  const { companyId, assignedTo, title, description, project, dueDate } = req.body;
-  
-  // Get the user ID from the authenticated user (from protectRoute middleware)
-  const assignedBy = req.user._id;
+  const { companyId, assignedTo, assignedBy, title, description, project, dueDate, location, status } = req.body;
   
   const task = await Task.create({
-    companyId,
-    assignedTo,
-    assignedBy,
+    companyId: companyId || null,
+    assignedTo: assignedTo || [],
+    assignedBy: assignedBy || null,
     title,
-    description,
+    description: description || '',
     project: project || 'General',
+    location: location || '',
     dueDate: dueDate || null,
-    status: 'todo'
+    status: status || 'todo'
   });
-  
-  // Populate user details
-  const populatedTask = await Task.findById(task._id)
-    .populate('assignedTo', 'personalInfo.firstName personalInfo.lastName email')
-    .populate('assignedBy', 'personalInfo.firstName personalInfo.lastName');
   
   res.status(201).json({
     success: true,
-    data: populatedTask
+    data: task
   });
 });
 
-// @desc    Get all tasks for a company
-// @route   GET /api/tasks/company/:companyId
-// @access  Private
-const getCompanyTasks = asyncHandler(async (req, res) => {
-  const { companyId } = req.params;
-  
-  const tasks = await Task.find({ companyId })
-    .populate('assignedTo', 'personalInfo.firstName personalInfo.lastName email')
-    .populate('assignedBy', 'personalInfo.firstName personalInfo.lastName')
+// @desc    Get all tasks
+// @route   GET /api/tasks
+// @access  Public
+const getAllTasks = asyncHandler(async (req, res) => {
+  const tasks = await Task.find({})
     .sort({ createdAt: -1 });
   
   res.json({
@@ -50,19 +39,14 @@ const getCompanyTasks = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get tasks assigned to a specific user
-// @route   GET /api/tasks/my-tasks
-// @access  Private
-const getMyTasks = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const companyId = req.user.companyId;
+// @desc    Get all tasks for a company
+// @route   GET /api/tasks/company/:companyId
+// @access  Public
+const getCompanyTasks = asyncHandler(async (req, res) => {
+  const { companyId } = req.params;
   
-  const tasks = await Task.find({ 
-    companyId,
-    assignedTo: userId 
-  })
-    .populate('assignedBy', 'personalInfo.firstName personalInfo.lastName')
-    .sort({ dueDate: 1, createdAt: -1 });
+  const tasks = await Task.find({ companyId })
+    .sort({ createdAt: -1 });
   
   res.json({
     success: true,
@@ -71,26 +55,31 @@ const getMyTasks = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Update task status
+// @desc    Update task
 // @route   PUT /api/tasks/:id
-// @access  Private
+// @access  Public
 const updateTask = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { status, completionNotes } = req.body;
+  const updateData = req.body;
   
-  const updateData = { status };
-  
-  // If marking as completed, set completion date
-  if (status === 'completed') {
+  // Handle status transitions
+  if (updateData.status === 'completed' && !updateData.completedAt) {
     updateData.completedAt = new Date();
-    updateData.completionNotes = completionNotes || '';
+  }
+  
+  // If transitioning from todo to in-progress, record start time
+  if (updateData.status === 'in-progress') {
+    const task = await Task.findById(id);
+    if (task && task.status === 'todo') {
+      updateData.startedAt = new Date();
+    }
   }
   
   const task = await Task.findByIdAndUpdate(
     id,
     updateData,
     { new: true, runValidators: true }
-  ).populate('assignedTo', 'personalInfo.firstName personalInfo.lastName');
+  );
   
   if (!task) {
     res.status(404);
@@ -116,12 +105,6 @@ const deleteTask = asyncHandler(async (req, res) => {
     throw new Error('Task not found');
   }
   
-  // Check if user is admin or assigned the task
-  if (req.user.role !== 'admin' && task.assignedBy.toString() !== req.user._id.toString()) {
-    res.status(403);
-    throw new Error('Not authorized to delete this task');
-  }
-  
   await task.deleteOne();
   
   res.json({
@@ -132,8 +115,8 @@ const deleteTask = asyncHandler(async (req, res) => {
 
 module.exports = {
   createTask,
+  getAllTasks,
   getCompanyTasks,
-  getMyTasks,
   updateTask,
   deleteTask
 };

@@ -4,17 +4,16 @@ const taskSchema = new mongoose.Schema({
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
-    required: true
+    required: false
   },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+  assignedTo: [{
+    type: String,  // Using String for mock users, change to ObjectId when using real User model
+    ref: 'User'
+  }],
   assignedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   title: {
     type: String,
@@ -30,12 +29,17 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: 'General'
   },
+  location: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     enum: ['todo', 'in-progress', 'completed'],
     default: 'todo'
   },
   dueDate: Date,
+  startedAt: Date,
   completedAt: Date,
   completionNotes: {
     type: String,

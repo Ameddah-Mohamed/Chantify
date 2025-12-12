@@ -1,40 +1,57 @@
-import axios from 'axios';
+const API_URL = 'http://localhost:8000/api';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Simple fetch wrapper
+const fetchAPI = async (endpoint, options = {}) => {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
 
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
-});
+  const data = await response.json();
 
-// Request interceptor to add token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('chantify_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  if (!response.ok) {
+    throw new Error(data.error || 'Something went wrong');
+  }
 
-export const taskApi = {
-  // Create task
-  createTask: (taskData) => api.post('/tasks', taskData),
-  
-  // Get company tasks
-  getCompanyTasks: (companyId) => api.get(`/tasks/company/${companyId}`),
-  
-  // Get my tasks
-  getMyTasks: () => api.get('/tasks/my-tasks'),
-  
-  // Update task
-  updateTask: (taskId, updateData) => api.put(`/tasks/${taskId}`, updateData),
-  
-  // Delete task
-  deleteTask: (taskId) => api.delete(`/tasks/${taskId}`),
+  return data;
 };
 
-// Export the base api instance for other modules
-export default api;
+export const taskAPI = {
+  // Get all tasks
+  getAllTasks: async () => {
+    return fetchAPI('/tasks');
+  },
+
+  // Get tasks for a specific company
+  getCompanyTasks: async (companyId) => {
+    return fetchAPI(`/tasks/company/${companyId}`);
+  },
+
+  // Create a new task
+  createTask: async (taskData) => {
+    return fetchAPI('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(taskData),
+    });
+  },
+
+  // Update a task
+  updateTask: async (taskId, updateData) => {
+    return fetchAPI(`/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  },
+
+  // Delete a task
+  deleteTask: async (taskId) => {
+    return fetchAPI(`/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export default taskAPI;
