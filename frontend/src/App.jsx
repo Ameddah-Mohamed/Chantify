@@ -17,6 +17,7 @@
 import React, { useState } from 'react';
 import Sidebar from './components/AdminSidebar';
 import Dashboard from './pages/Admin/Dashboard';
+import CreateTask from './pages/Admin/CreateTask';
 import Workers from './pages/Admin/Workers';
 import TaskApproval from './pages/Admin/TaskApproval';
 import JobTypes from './pages/Admin/JobTypes';
@@ -46,6 +47,8 @@ const App = () => {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'createTask':
+        return <CreateTask />;
       case 'workers':
         return <Workers />;
       case 'taskApproval':
