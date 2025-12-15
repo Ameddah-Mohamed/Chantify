@@ -1,15 +1,15 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const cookieParser = require('cookie-parser');
-const connectDB = require('./db/connection');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import connectDB from './db/connection.js';
 
 // Load environment variables
 dotenv.config();
 
 // Import routes
-const taskRoutes = require('./routes/taskRoutes');
-const simpleUserRoutes = require('./routes/simpleUserRoutes');
+import taskRoutes from './routes/taskRoutes.js';
+import simpleUserRoutes from './routes/simpleUserRoutes.js';
 // const authRoutes = require('./routes/authRoutes');
 // const companyRoutes = require('./routes/companyRoutes');
 // const userRoutes = require('./routes/userRoutes');

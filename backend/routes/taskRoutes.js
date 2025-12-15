@@ -1,12 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { createTask, getCompanyTasks, getAllTasks, updateTask, deleteTask } from '../controllers/task.controller.js';
+
 const router = express.Router();
-const {
-  createTask,
-  getCompanyTasks,
-  getAllTasks,
-  updateTask,
-  deleteTask
-} = require('../controllers/task.controller');
 
 // Routes (no authentication required)
 router.route('/')
@@ -21,4 +16,4 @@ router.route('/:id')
   .put(updateTask)
   .delete(deleteTask);
 
-module.exports = router;
+export default router;
