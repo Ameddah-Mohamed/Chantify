@@ -37,6 +37,9 @@ const taskSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  approvedAt: {
+    type: Date
+  },
   dueDate: Date,
   completionNotes: {
     type: String,

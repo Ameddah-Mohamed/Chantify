@@ -1,51 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { taskAPI } from '../../API/taskAPI';
 
 const TaskApproval = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      worker: 'Jane Doe',
-      taskName: 'Q3 Marketing Report Finalization',
-      completed: 'Oct 26, 2023, 10:15 AM',
-      deadline: 'Oct 27, 2023, 5:00 PM',
-      photo: 'https://cdn.usegalileo.ai/sdxl10/8f0e3c8d-40a5-4e0e-9e4a-3c5f5e5f5e5f.png',
-      checked: false
-    },
-    {
-      id: 2,
-      worker: 'John Smith',
-      taskName: 'Update Client Database',
-      completed: 'Oct 26, 2023, 9:45 AM',
-      deadline: 'Oct 26, 2023, 12:00 PM',
-      photo: 'https://cdn.usegalileo.ai/sdxl10/9f1e4d9e-51b6-5f1f-af5b-4d6f6f6f6f6f.png',
-      checked: false,
-      overdue: true
-    },
-    {
-      id: 3,
-      worker: 'Emily White',
-      taskName: 'Office Supply Inventory Check',
-      completed: 'Oct 25, 2023, 3:20 PM',
-      deadline: 'Oct 25, 2023, 5:00 PM',
-      photo: 'https://cdn.usegalileo.ai/sdxl10/af2f5e0f-62c7-6g2g-bg6c-5e7g7g7g7g7g.png',
-      checked: false
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTasksForApproval();
+  }, []);
+
+  const fetchTasksForApproval = async () => {
+    try {
+      setLoading(true);
+      const response = await taskAPI.getTasksForApproval();
+      setTasks(response.data || []);
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch tasks for approval');
+      console.error('Error fetching tasks for approval:', err);
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const handleApprove = (id) => {
-    console.log('Approved task:', id);
-    setTasks(tasks.filter(task => task.id !== id));
   };
 
-  const handleReject = (id) => {
-    console.log('Rejected task:', id);
-    setTasks(tasks.filter(task => task.id !== id));
+  const handleApprove = async (taskId) => {
+    try {
+      await taskAPI.approveTask(taskId);
+      // Remove approved task from the list
+      setTasks(tasks.filter(task => task._id !== taskId));
+    } catch (err) {
+      alert('Failed to approve task: ' + err.message);
+    }
   };
 
-  const handleCheckbox = (id) => {
+  const handleReject = (taskId) => {
+    // For now, just remove from list - you might want to add a reject endpoint
+    console.log('Rejected task:', taskId);
+    setTasks(tasks.filter(task => task._id !== taskId));
+  };
+
+  const handleCheckbox = (taskId) => {
     setTasks(tasks.map(task => 
-      task.id === id ? { ...task, checked: !task.checked } : task
+      task._id === taskId ? { ...task, checked: !task.checked } : task
     ));
   };
 
