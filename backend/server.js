@@ -15,10 +15,12 @@ import workerTaskRoutes from './routes/workerTaskRoutes.js';
 // const companyRoutes = require('./routes/companyRoutes');
 // const userRoutes = require('./routes/userRoutes');
 
-// Connect to MongoDB
-connectDB();
-
 const app = express();
+
+// Connect to MongoDB (non-blocking)
+connectDB().catch((error) => {
+  console.log('⚠️ MongoDB connection failed, continuing without database');
+});
 
 // CORS Configuration 
 app.use(cors({

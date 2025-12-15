@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import TaskCard from "../../components/TaskCard";
 import { taskAPI } from "../../API/taskAPI";
 import { workerTaskAPI } from "../../API/workerTaskAPI";
-import { workerTaskAPI } from "../../API/workerTaskAPI";
 
 export default function WeeklyTaskPage() {
 	const [tasks, setTasks] = useState([]);
