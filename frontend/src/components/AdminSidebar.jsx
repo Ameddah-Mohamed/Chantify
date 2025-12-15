@@ -47,7 +47,8 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
         </div>
 
         {/* Logout Section */}
-        <div className="pt-4 border-t border-white/20">
+        <div className="pt-4 border-t border-white/20 -mt-[90px]">
+
           <button
             onClick={() => console.log('Logout clicked')}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors w-full"
