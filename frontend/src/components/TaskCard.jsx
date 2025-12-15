@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { taskAPI } from "../API/taskAPI";
+import { workerTaskAPI } from "../API/workerTaskAPI";
 
-const TaskCard = ({ task, onStatusUpdate }) => {
+const TaskCard = ({ task, workerId = "default-worker-id", onStatusUpdate }) => {
   const [loading, setLoading] = useState(false);
 
   const getStatusDisplay = (status) => {
@@ -37,12 +37,12 @@ const TaskCard = ({ task, onStatusUpdate }) => {
 
     setLoading(true);
     try {
-      await taskAPI.updateTask(task._id, { status: buttonConfig.nextStatus });
+      await workerTaskAPI.updateStatus(task._id, workerId, buttonConfig.nextStatus);
       if (onStatusUpdate) {
         onStatusUpdate();
       }
     } catch (error) {
-      console.error('Failed to update task status:', error);
+      console.error('Failed to update worker task status:', error);
       alert('Failed to update task status. Please try again.');
     } finally {
       setLoading(false);

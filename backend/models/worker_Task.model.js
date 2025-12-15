@@ -15,8 +15,8 @@ const WorkerTaskSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['start', 'in_progress', 'complete'],
-        default: 'start'
+        enum: ['todo', 'in-progress', 'completed'],
+        default: 'todo'
     },
 
     startedAt: Date,

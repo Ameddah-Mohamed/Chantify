@@ -10,6 +10,7 @@ dotenv.config();
 // Import routes
 import taskRoutes from './routes/taskRoutes.js';
 import simpleUserRoutes from './routes/simpleUserRoutes.js';
+import workerTaskRoutes from './routes/workerTaskRoutes.js';
 // const authRoutes = require('./routes/authRoutes');
 // const companyRoutes = require('./routes/companyRoutes');
 // const userRoutes = require('./routes/userRoutes');
@@ -33,6 +34,7 @@ app.use(express.json());
 // app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', simpleUserRoutes);
+app.use('/api/worker-tasks', workerTaskRoutes);
 // app.use('/api/companies', companyRoutes);
 // app.use('/api/users', userRoutes);
 

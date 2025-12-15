@@ -2,22 +2,49 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TaskCard from "../../components/TaskCard";
 import { taskAPI } from "../../API/taskAPI";
+import { workerTaskAPI } from "../../API/workerTaskAPI";
+import { workerTaskAPI } from "../../API/workerTaskAPI";
 
 export default function WeeklyTaskPage() {
 	const [tasks, setTasks] = useState([]);
+	const [workerTasks, setWorkerTasks] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const navigate = useNavigate();
+	
+	// For now, we'll use a hardcoded worker ID
+	// In a real app, this would come from user authentication context
+	const currentWorkerId = "default-worker-id";
 
 	useEffect(() => {
-		fetchTasks();
+		fetchTasksAndStatuses();
 	}, []);
 
-	const fetchTasks = async () => {
+	const fetchTasksAndStatuses = async () => {
 		try {
 			setLoading(true);
 			const response = await taskAPI.getAllTasks();
-			setTasks(response.data || []);
+			const tasksData = response.data || [];
+			setTasks(tasksData);
+			
+			// Fetch worker task statuses for all tasks
+			const statusPromises = tasksData.map(async (task) => {
+				try {
+					const statusResponse = await workerTaskAPI.getStatus(task._id, currentWorkerId);
+					return { taskId: task._id, status: statusResponse.data?.status || 'todo' };
+				} catch (err) {
+					// If no worker task exists, default to 'todo'
+					return { taskId: task._id, status: 'todo' };
+				}
+			});
+			
+			const statuses = await Promise.all(statusPromises);
+			const statusMap = {};
+			statuses.forEach(({ taskId, status }) => {
+				statusMap[taskId] = status;
+			});
+			setWorkerTasks(statusMap);
+			
 			setError(null);
 		} catch (err) {
 			setError(err.message || 'Failed to fetch tasks');
@@ -79,7 +106,7 @@ export default function WeeklyTaskPage() {
 						<p className="font-medium">Error loading tasks</p>
 						<p className="text-sm">{error}</p>
 						<button 
-							onClick={fetchTasks}
+							onClick={fetchTasksAndStatuses}
 							className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
 						>
 							Retry
@@ -96,7 +123,7 @@ export default function WeeklyTaskPage() {
 				<div className="flex justify-between items-center mb-6">
 					<h1 className="text-2xl font-bold text-gray-900">Weekly Tasks</h1>
 					<button 
-						onClick={fetchTasks}
+						onClick={fetchTasksAndStatuses}
 						className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
 					>
 						Refresh
@@ -124,8 +151,9 @@ export default function WeeklyTaskPage() {
 												className="cursor-pointer hover:shadow-lg transition-shadow"
 											>
 												<TaskCard
-													task={task}
-													onStatusUpdate={fetchTasks}
+													task={{...task, status: workerTasks[task._id] || 'todo'}}
+													workerId={currentWorkerId}
+													onStatusUpdate={fetchTasksAndStatuses}
 												/>
 											</div>
 										))}

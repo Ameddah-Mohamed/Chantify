@@ -1,11 +1,12 @@
 import Task from '../models/task.model.js';
+import WorkerTask from '../models/worker_Task.model.js';
 import asyncHandler from 'express-async-handler';
 
 // @desc    Create a new task
 // @route   POST /api/tasks
 // @access  Public
 const createTask = asyncHandler(async (req, res) => {
-  const { companyId, assignedTo, assignedBy, title, description, project, dueDate, location, status } = req.body;
+  const { companyId, assignedTo, assignedBy, title, description, project, dueDate, location } = req.body;
   
   const task = await Task.create({
     companyId: companyId || null,
@@ -16,7 +17,7 @@ const createTask = asyncHandler(async (req, res) => {
     project: project || 'General',
     location: location || '',
     dueDate: dueDate || null,
-    status: status || 'todo'
+    approved: false
   });
   
   res.status(201).json({
@@ -61,19 +62,6 @@ const getCompanyTasks = asyncHandler(async (req, res) => {
 const updateTask = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
-  
-  // Handle status transitions
-  if (updateData.status === 'completed' && !updateData.completedAt) {
-    updateData.completedAt = new Date();
-  }
-  
-  // If transitioning from todo to in-progress, record start time
-  if (updateData.status === 'in-progress') {
-    const task = await Task.findById(id);
-    if (task && task.status === 'todo') {
-      updateData.startedAt = new Date();
-    }
-  }
   
   const task = await Task.findByIdAndUpdate(
     id,

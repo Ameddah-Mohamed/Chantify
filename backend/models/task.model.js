@@ -33,14 +33,11 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  status: {
-    type: String,
-    enum: ['todo', 'in-progress', 'completed'],
-    default: 'todo'
+  approved: {
+    type: Boolean,
+    default: false
   },
   dueDate: Date,
-  startedAt: Date,
-  completedAt: Date,
   completionNotes: {
     type: String,
     default: ''
@@ -50,7 +47,7 @@ const taskSchema = new mongoose.Schema({
 });
 
 
-taskSchema.index({ companyId: 1, status: 1 });
+taskSchema.index({ companyId: 1, approved: 1 });
 taskSchema.index({ assignedTo: 1 });
 taskSchema.index({ dueDate: 1 });
 
