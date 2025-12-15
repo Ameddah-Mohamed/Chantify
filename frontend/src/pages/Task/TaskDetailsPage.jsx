@@ -91,8 +91,8 @@ export default function TaskDetailsPage() {
   const getStatusColor = (status) => {
     const colors = {
       'todo': 'bg-gray-200 text-gray-800',
-      'in-progress': 'bg-blue-200 text-blue-800',
-      'completed': 'bg-green-200 text-green-800'
+      'in-progress': 'bg-orange-200 text-orange-800',
+      'completed': 'bg-blue-200 text-blue-800'
     };
     return colors[status] || colors['todo'];
   };
@@ -243,7 +243,7 @@ export default function TaskDetailsPage() {
                   <button 
                     onClick={() => handleStatusChange('completed')}
                     disabled={updating}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
                   >
                     {updating ? 'Updating...' : 'Mark Complete'}
                   </button>

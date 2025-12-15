@@ -8,7 +8,7 @@ const TaskCard = ({ task, onStatusUpdate }) => {
     const displays = {
       'todo': { label: 'Not Started', color: 'bg-gray-200 text-gray-800' },
       'in-progress': { label: 'In Progress', color: 'bg-orange-200 text-orange-800' },
-      'completed': { label: 'Completed', color: 'bg-green-200 text-green-800' }
+      'completed': { label: 'Completed', color: 'bg-blue-200 text-blue-800' }
     };
     return displays[status] || displays['todo'];
   };
@@ -17,7 +17,7 @@ const TaskCard = ({ task, onStatusUpdate }) => {
     if (status === 'todo') {
       return { label: 'Start', color: 'bg-blue-600 hover:bg-blue-700', nextStatus: 'in-progress' };
     } else if (status === 'in-progress') {
-      return { label: 'Complete', color: 'bg-green-600 hover:bg-green-700', nextStatus: 'completed' };
+      return { label: 'Complete', color: 'bg-blue-600 hover:bg-blue-700', nextStatus: 'completed' };
     }
     return { label: 'Details', color: 'bg-orange-600 hover:bg-orange-700', nextStatus: null };
   };
@@ -26,7 +26,7 @@ const TaskCard = ({ task, onStatusUpdate }) => {
     const colors = {
       'todo': 'border-gray-300',
       'in-progress': 'border-orange-300',
-      'completed': 'border-green-300'
+      'completed': 'border-blue-300'
     };
     return colors[status] || 'border-gray-300';
   };
