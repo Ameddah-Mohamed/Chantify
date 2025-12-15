@@ -30,6 +30,15 @@ createRoot(document.getElementById('root')).render(
           <Route path="/tasks/:id" element={<TaskDetailsPage />} />
           <Route path="/admin/projects" element={<ProjectManagementPage />} />
         </Route>
+
+        {/* Manager Routes WITHOUT Navbar (has its own Sidebar) */}
+        <Route path="/manager/dashboard" element={<Dashboard />} />
+        <Route path="/manager/workers" element={<Workers />} />
+        <Route path="/manager/task-approval" element={<TaskApproval />} />
+        <Route path="/manager/job-types" element={<JobTypes />} />
+        <Route path="/manager/payments" element={<Payments />} />
+        <Route path="/manager/payments/:workerId" element={<PaymentDetails />} />
+        <Route path="/manager/settings" element={<Settings />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

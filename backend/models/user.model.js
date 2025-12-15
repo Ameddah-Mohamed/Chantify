@@ -90,6 +90,12 @@ const userSchema = new mongoose.Schema({
     default: Date.now
   },
   
+  jobType: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'JobType',
+  default: null
+  },
+  
   // When admin approves/rejects
   reviewedAt: Date,
   reviewedBy: {
