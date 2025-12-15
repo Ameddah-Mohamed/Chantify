@@ -1,14 +1,13 @@
-import express from "express";
-import {
+const express = require('express');
+const {
   getCompany,
   updateCompany,
   getCompanyUsers,
   getPendingApplications,
   approveApplication,
   rejectApplication
-
-} from "../controllers/company.controller.js";
-import protectRoute from "../middleware/protectRoute.js";
+} = require('../controllers/company.controller');
+const { protectRoute } = require('../middleware/protectRoute');
 
 const router = express.Router();
 
@@ -22,6 +21,7 @@ router.get("/applications/pending", protectRoute, getPendingApplications);
 router.post("/applications/approve", protectRoute, approveApplication);
 router.post("/applications/reject", protectRoute, rejectApplication);
 
+<<<<<<< HEAD
 export default router;
 
 
@@ -49,3 +49,6 @@ export default router;
 // router.post('/reject-application', protectRoute, rejectApplication);
 
 // export default router;
+=======
+module.exports = router;
+>>>>>>> 6a47782ece35410fa96ee8d45c114c0b7299777f

@@ -1,3 +1,4 @@
+
 // server.js
 import express from "express";
 import dotenv from "dotenv";
@@ -11,11 +12,21 @@ import companyRoutes from "./routes/companyRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import jobTypeRoutes from "./routes/jobTypeRoutes.js"
 
+
+// Load environment variables
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 8000;
+// Import routes
+const taskRoutes = require('./routes/taskRoutes');
+const simpleUserRoutes = require('./routes/simpleUserRoutes');
+// const authRoutes = require('./routes/authRoutes');
+// const companyRoutes = require('./routes/companyRoutes');
+// const userRoutes = require('./routes/userRoutes');
 
+// Connect to MongoDB
+connectDB();
+
+const app = express();
 
 // CORS Configuration 
 app.use(cors({
@@ -23,35 +34,41 @@ app.use(cors({
   credentials: true
 }));
 
-
 // Middleware
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(express.json());
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/jobtypes", jobTypeRoutes);
 
-// Health check route
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ message: "Server is running!" });
-});
+// app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
 
-// 404 handler - FIXED: Use a proper path
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
+// app.use('/api/companies', companyRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Chantify API is running',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling middleware
-app.use((error, req, res, next) => {
-  console.error(error.stack);
-  res.status(500).json({ error: "Something went wrong!" });
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    error: err.message || 'Server Error'
+  });
 });
 
+const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  connectDB();
+  console.log(` Server running on port ${PORT}`);
+  console.log(` MongoDB: ${process.env.MONGO_URI || 'Not configured'}`);
 });
