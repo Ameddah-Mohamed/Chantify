@@ -45,9 +45,16 @@ const userSchema = new mongoose.Schema({
     }
   },
   
+  // Job Type Reference
+  jobTypeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'JobType',
+    default: null
+  },
+  
   hourlyRate: {
     type: Number,
-    default: 500,
+    default: 0,
     min: 0
   },
   

@@ -9,6 +9,7 @@ import cors from 'cors';
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import jobTypeRoutes from "./routes/jobTypeRoutes.js"
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/jobtypes", jobTypeRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
