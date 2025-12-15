@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import DaySection from "../../components/DaySection";
+import { useNavigate } from "react-router-dom";
 import TaskCard from "../../components/TaskCard";
 import { taskAPI } from "../../API/taskAPI";
 
@@ -7,6 +7,7 @@ export default function WeeklyTaskPage() {
 	const [tasks, setTasks] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		fetchTasks();
@@ -25,6 +26,39 @@ export default function WeeklyTaskPage() {
 			setLoading(false);
 		}
 	};
+
+	const getWeekDays = () => {
+		const days = [];
+		const today = new Date();
+		const currentDay = today.getDay();
+		const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+		const monday = new Date(today.setDate(diff));
+
+		for (let i = 0; i < 7; i++) {
+			const date = new Date(monday);
+			date.setDate(date.getDate() + i);
+			days.push({
+				date: date.toISOString().split('T')[0],
+				dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+				dayDate: date.getDate()
+			});
+		}
+		return days;
+	};
+
+	const getTasksForDay = (dateStr) => {
+		return tasks.filter(task => {
+			if (!task.dueDate) return false;
+			const taskDate = new Date(task.dueDate).toISOString().split('T')[0];
+			return taskDate === dateStr;
+		});
+	};
+
+	const handleTaskClick = (taskId) => {
+		navigate(`/worker/task/${taskId}`);
+	};
+
+	const weekDays = getWeekDays();
 
 	if (loading) {
 		return (
@@ -69,23 +103,38 @@ export default function WeeklyTaskPage() {
 					</button>
 				</div>
 
-				{tasks.length === 0 ? (
-					<div className="bg-white rounded-lg shadow p-8 text-center">
-						<p className="text-gray-500">No tasks found. Create your first task!</p>
-					</div>
-				) : (
-					<DaySection day="All Tasks" highlight>
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-							{tasks.map((task) => (
-								<TaskCard
-									key={task._id}
-									task={task}
-									onStatusUpdate={fetchTasks}
-								/>
-							))}
-						</div>
-					</DaySection>
-				)}
+				{/* Calendar Grid */}
+				<div className="space-y-6">
+					{weekDays.map((day) => {
+						const dayTasks = getTasksForDay(day.date);
+						return (
+							<div key={day.date} className="bg-white rounded-lg shadow p-6">
+								<h2 className="text-lg font-bold text-gray-900 mb-4">
+									{day.dayName}, {day.dayDate}
+								</h2>
+								
+								{dayTasks.length === 0 ? (
+									<p className="text-gray-500 text-sm">No tasks scheduled</p>
+								) : (
+									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+										{dayTasks.map((task) => (
+											<div 
+												key={task._id}
+												onClick={() => handleTaskClick(task._id)}
+												className="cursor-pointer hover:shadow-lg transition-shadow"
+											>
+												<TaskCard
+													task={task}
+													onStatusUpdate={fetchTasks}
+												/>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})}
+				</div>
 			</main>
 		</div>
 	);
