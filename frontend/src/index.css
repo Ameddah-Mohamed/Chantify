@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #1173d4;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101922;
+  --font-family-display: 'Work Sans', sans-serif;
+}
+
+body { 
+  font-family: 'Work Sans', sans-serif; 
+}

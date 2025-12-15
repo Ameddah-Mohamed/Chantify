@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "backend/server.js",
-  "type": "module",
   "scripts": {
     "dev": "nodemon backend/server.js",
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "test:db": "node backend/test-db.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +26,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.2"
   },

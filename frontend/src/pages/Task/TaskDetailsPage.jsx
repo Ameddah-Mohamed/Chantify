@@ -1,0 +1,39 @@
+import Breadcrumbs from "../../components/Breadcrumbs";
+import TaskHeader from "../../components/TaskHeader";
+import TaskDescriptionCard from "../../components/TaskDescriptionCard";
+import TaskDetailsCard from "../../components/TaskDetailsCard";
+import AssignedTeam from "../../components/AssignedTeam";
+import ProofOfProgress from "../../components/ProofOfProgress";
+
+export default function TaskDetailsPage() {
+  return (
+    <div className="font-display bg-gray-50 text-gray-900 min-h-screen">
+
+
+<main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<Breadcrumbs />
+<TaskHeader />
+
+
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div className="lg:col-span-2 flex flex-col gap-8">
+<TaskDescriptionCard />
+<TaskDetailsCard />
+</div>
+
+
+<div className="lg:col-span-1 flex flex-col gap-8">
+<AssignedTeam />
+<ProofOfProgress />
+
+
+<button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow-md">
+<span className="material-symbols-outlined">check_circle</span>
+Submit Work
+</button>
+</div>
+</div>
+</main>
+</div>
+);
+}
