@@ -49,7 +49,7 @@ export const getCompanyJobTypes = async (req, res) => {
 // Create a new job type (admin only)
 export const createJobType = async (req, res) => {
   try {
-    const { name, hourlyRate } = req.body;
+    const { name, hourlyRate, expectedHoursPerDay } = req.body;
 
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admin can create job types" });
@@ -57,6 +57,10 @@ export const createJobType = async (req, res) => {
 
     if (!name || !hourlyRate) {
       return res.status(400).json({ error: "Name and hourly rate are required" });
+    }
+
+    if(!expectedHoursPerDay){
+      return res.status(400).json({ error: "expectedHoursPerDay is required" });
     }
 
     if (hourlyRate < 0) {
@@ -78,7 +82,8 @@ export const createJobType = async (req, res) => {
     const newJobType = new JobType({
       name: name.trim(),
       hourlyRate,
-      companyId: req.user.companyId
+      companyId: req.user.companyId,
+      expectedHoursPerDay
     });
 
     await newJobType.save();
@@ -97,7 +102,7 @@ export const createJobType = async (req, res) => {
 export const updateJobType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, hourlyRate, isActive } = req.body;
+    const { name, hourlyRate, expectedHoursPerDay, isActive } = req.body;
 
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admin can update job types" });
@@ -107,10 +112,15 @@ export const updateJobType = async (req, res) => {
       return res.status(400).json({ error: "Hourly rate must be positive" });
     }
 
+    if(expectedHoursPerDay < 0 || expectedHoursPerDay > 12){
+      return res.status(400).json({ error: "expectedHoursPerDay must be between 0 and 12" });
+    }
+
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
-    if (hourlyRate !== undefined) updateData.hourlyRate = hourlyRate;
-    if (isActive !== undefined) updateData.isActive = isActive;
+    if (hourlyRate !== undefined) updateData.hourlyRate = Number(hourlyRate);
+    if (expectedHoursPerDay !== undefined) updateData.expectedHoursPerDay = Number(expectedHoursPerDay);
+    if (isActive !== undefined) updateData.isActive = Boolean(isActive);
 
     const updatedJobType = await JobType.findOneAndUpdate(
       { _id: id, companyId: req.user.companyId },

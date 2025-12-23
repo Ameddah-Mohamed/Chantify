@@ -12,6 +12,12 @@ const jobTypeSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  expectedHoursPerDay: {  // ← Valeur par défaut pour ce job type
+    type: Number,
+    default: 8,
+    min: 0,
+    max: 12
+  },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
