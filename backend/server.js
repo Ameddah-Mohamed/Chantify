@@ -1,8 +1,17 @@
-import express from 'express';
+
+// server.js
+import express from "express";
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import connectDB from "./db/connection.js";
 import cors from 'cors';
-import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
-import connectDB from './db/connection.js';
+
+// Routes
+import authRoutes from "./routes/authRoutes.js";
+import companyRoutes from "./routes/companyRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import jobTypeRoutes from "./routes/jobTypeRoutes.js"
+
 
 // Load environment variables
 dotenv.config();
@@ -32,13 +41,16 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 
-// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/company", companyRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/jobtypes", jobTypeRoutes);
+
 // app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', simpleUserRoutes);
 app.use('/api/worker-tasks', workerTaskRoutes);
 // app.use('/api/companies', companyRoutes);
-// app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

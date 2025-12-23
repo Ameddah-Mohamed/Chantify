@@ -1,4 +1,4 @@
-//company.controller.js
+// backend/controllers/company.controller.js
 import Company from "../models/company.model.js";
 import User from "../models/user.model.js";
 
@@ -56,7 +56,11 @@ export const updateCompany = async (req, res) => {
 export const getCompanyUsers = async (req, res) => {
   try {
     const company = await Company.findById(req.user.companyId)
-      .populate('teamMembers', '-password') // Populate teamMembers without password
+      .populate({
+        path: 'teamMembers',
+        select: '-password',
+        populate: { path: 'jobTypeId', select: 'name hourlyRate' }
+      })
       .select('teamMembers');
 
     if (!company) {
@@ -74,7 +78,11 @@ export const getCompanyUsers = async (req, res) => {
 export const getPendingApplications = async (req, res) => {
   try {
     const company = await Company.findById(req.user.companyId)
-      .populate('pendingApplications', 'email personalInfo hourlyRate appliedAt');
+      .populate({
+        path: 'pendingApplications',
+        select: 'email personalInfo hourlyRate appliedAt jobTypeId',
+        populate: { path: 'jobTypeId', select: 'name hourlyRate' }
+      });
 
     if (!company) {
       return res.status(404).json({ error: "Company not found" });
@@ -93,7 +101,7 @@ export const approveApplication = async (req, res) => {
     const { userId } = req.body;
 
     const company = await Company.findById(req.user.companyId);
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate('jobTypeId');
 
     if (!company || !user || user.companyId.toString() !== company._id.toString()) {
       return res.status(404).json({ error: "Application not found" });
@@ -119,7 +127,8 @@ export const approveApplication = async (req, res) => {
         _id: user._id,
         email: user.email,
         personalInfo: user.personalInfo,
-        hourlyRate: user.hourlyRate
+        hourlyRate: user.hourlyRate,
+        jobType: user.jobTypeId
       }
     });
 

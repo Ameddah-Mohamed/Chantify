@@ -2,20 +2,26 @@
 import mongoose from 'mongoose';
 
 const jobTypeSchema = new mongoose.Schema({
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
-    required: true
-  },
   name: {
     type: String,
     required: true,
     trim: true
   },
-  baseSalary: {
+  hourlyRate: {
     type: Number,
     required: true,
     min: 0
+  },
+  expectedHoursPerDay: {  // ← Valeur par défaut pour ce job type
+    type: Number,
+    default: 8,
+    min: 0,
+    max: 12
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: true
   },
   isActive: {
     type: Boolean,
@@ -25,7 +31,6 @@ const jobTypeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to ensure unique job type names per company
-jobTypeSchema.index({ companyId: 1, name: 1 }, { unique: true });
+
 
 export default mongoose.model('JobType', jobTypeSchema);

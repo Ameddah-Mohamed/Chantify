@@ -1,5 +1,4 @@
-//user.controller.js
-
+// backend/controllers/user.controller.js
 import User from "../models/user.model.js";
 
 // Get logged-in user profile
@@ -7,7 +6,8 @@ export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .select('-password -invitationToken')
-      .populate('companyId');
+      .populate('companyId')
+      .populate('jobTypeId');
     
     res.status(200).json(user);
   } catch (error) {
@@ -30,7 +30,8 @@ export const updateProfile = async (req, res) => {
       },
       { new: true, runValidators: true }
     ).select('-password')
-     .populate('companyId');
+     .populate('companyId')
+     .populate('jobTypeId');
 
     res.status(200).json({
       message: "Profile updated successfully",
