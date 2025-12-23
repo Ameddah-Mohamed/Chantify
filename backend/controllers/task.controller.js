@@ -1,11 +1,12 @@
-const Task = require('../models/task.model');
-const asyncHandler = require('express-async-handler');
+import Task from '../models/task.model.js';
+import WorkerTask from '../models/worker_Task.model.js';
+import asyncHandler from 'express-async-handler';
 
 // @desc    Create a new task
 // @route   POST /api/tasks
 // @access  Public
 const createTask = asyncHandler(async (req, res) => {
-  const { companyId, assignedTo, assignedBy, title, description, project, dueDate, location, status } = req.body;
+  const { companyId, assignedTo, assignedBy, title, description, project, dueDate, location } = req.body;
   
   const task = await Task.create({
     companyId: companyId || null,
@@ -16,7 +17,7 @@ const createTask = asyncHandler(async (req, res) => {
     project: project || 'General',
     location: location || '',
     dueDate: dueDate || null,
-    status: status || 'todo'
+    approved: false
   });
   
   res.status(201).json({
@@ -62,19 +63,6 @@ const updateTask = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   
-  // Handle status transitions
-  if (updateData.status === 'completed' && !updateData.completedAt) {
-    updateData.completedAt = new Date();
-  }
-  
-  // If transitioning from todo to in-progress, record start time
-  if (updateData.status === 'in-progress') {
-    const task = await Task.findById(id);
-    if (task && task.status === 'todo') {
-      updateData.startedAt = new Date();
-    }
-  }
-  
   const task = await Task.findByIdAndUpdate(
     id,
     updateData,
@@ -113,10 +101,74 @@ const deleteTask = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = {
-  createTask,
-  getAllTasks,
-  getCompanyTasks,
-  updateTask,
-  deleteTask
-};
+
+// @desc    Get tasks ready for approval (all workers completed)
+// @route   GET /api/tasks/ready-for-approval
+// @access  Public
+const getTasksForApproval = asyncHandler(async (req, res) => {
+  const tasks = await Task.find({ approved: false })
+    .populate('assignedTo', 'firstName lastName email')
+    .populate('assignedBy', 'firstName lastName email')
+    .sort({ createdAt: -1 });
+
+  const tasksReadyForApproval = [];
+
+  for (const task of tasks) {
+    if (task.assignedTo.length === 0) continue;
+    
+    // Get worker task statuses for all assigned workers
+    const workerTasks = await WorkerTask.find({ taskId: task._id })
+      .populate('workerId', 'firstName lastName email');
+    
+    // Check if all assigned workers have completed their tasks
+    const allCompleted = task.assignedTo.every(worker => {
+      const workerTask = workerTasks.find(wt => wt.workerId._id.toString() === worker._id.toString());
+      return workerTask && workerTask.status === 'completed';
+    });
+
+    if (allCompleted) {
+      tasksReadyForApproval.push({
+        ...task.toObject(),
+        workerTasks: workerTasks.map(wt => ({
+          workerId: wt.workerId,
+          status: wt.status,
+          completedAt: wt.completedAt,
+          startedAt: wt.startedAt,
+          files: wt.files
+        }))
+      });
+    }
+  }
+
+  res.json({
+    success: true,
+    count: tasksReadyForApproval.length,
+    data: tasksReadyForApproval
+  });
+});
+
+// @desc    Approve a task
+// @route   PUT /api/tasks/:id/approve
+// @access  Public
+const approveTask = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  const task = await Task.findByIdAndUpdate(
+    id,
+    { approved: true, approvedAt: new Date() },
+    { new: true, runValidators: true }
+  );
+  
+  if (!task) {
+    res.status(404);
+    throw new Error('Task not found');
+  }
+  
+  res.json({
+    success: true,
+    data: task,
+    message: 'Task approved successfully'
+  });
+});
+
+export { createTask, getAllTasks, getCompanyTasks, updateTask, deleteTask, getTasksForApproval, approveTask };

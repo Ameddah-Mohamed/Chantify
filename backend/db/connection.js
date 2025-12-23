@@ -1,8 +1,7 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
-   
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -11,8 +10,10 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error(` MongoDB Connection Error: ${error.message}`);
-    process.exit(1);
+    console.log('⚠️ Server will continue without database connection');
+    // Don't exit process, let server continue
+    return null;
   }
 };
 
-module.exports = connectDB;
+export default connectDB;

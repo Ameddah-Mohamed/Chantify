@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { getUsers } from '../controllers/simple-user.controller.js';
+
 const router = express.Router();
-const { getUsers } = require('../controllers/simple-user.controller');
 
 // Routes (no authentication required for demo)
 router.get('/', getUsers);
 
-module.exports = router;
+export default router;

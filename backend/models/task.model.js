@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taskSchema = new mongoose.Schema({
   companyId: {
@@ -33,14 +33,14 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  status: {
-    type: String,
-    enum: ['todo', 'in-progress', 'completed'],
-    default: 'todo'
+  approved: {
+    type: Boolean,
+    default: false
+  },
+  approvedAt: {
+    type: Date
   },
   dueDate: Date,
-  startedAt: Date,
-  completedAt: Date,
   completionNotes: {
     type: String,
     default: ''
@@ -50,9 +50,9 @@ const taskSchema = new mongoose.Schema({
 });
 
 
-taskSchema.index({ companyId: 1, status: 1 });
+taskSchema.index({ companyId: 1, approved: 1 });
 taskSchema.index({ assignedTo: 1 });
 taskSchema.index({ dueDate: 1 });
 
 const Task = mongoose.model('Task', taskSchema);
-module.exports = Task;
+export default Task;

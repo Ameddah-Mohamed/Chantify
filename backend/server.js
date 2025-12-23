@@ -17,16 +17,19 @@ import jobTypeRoutes from "./routes/jobTypeRoutes.js"
 dotenv.config();
 
 // Import routes
-const taskRoutes = require('./routes/taskRoutes');
-const simpleUserRoutes = require('./routes/simpleUserRoutes');
+import taskRoutes from './routes/taskRoutes.js';
+import simpleUserRoutes from './routes/simpleUserRoutes.js';
+import workerTaskRoutes from './routes/workerTaskRoutes.js';
 // const authRoutes = require('./routes/authRoutes');
 // const companyRoutes = require('./routes/companyRoutes');
 // const userRoutes = require('./routes/userRoutes');
 
-// Connect to MongoDB
-connectDB();
-
 const app = express();
+
+// Connect to MongoDB (non-blocking)
+connectDB().catch((error) => {
+  console.log('⚠️ MongoDB connection failed, continuing without database');
+});
 
 // CORS Configuration 
 app.use(cors({
@@ -45,7 +48,8 @@ app.use("/api/jobtypes", jobTypeRoutes);
 
 // app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-
+app.use('/api/users', simpleUserRoutes);
+app.use('/api/worker-tasks', workerTaskRoutes);
 // app.use('/api/companies', companyRoutes);
 
 // Health check endpoint

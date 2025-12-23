@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Building2, Mail, Phone, Clock, Shield, Save, X, Edit2, Briefcase } from 'lucide-react';
+import WorkerNavbar from '../components/WorkerNavbar';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -193,8 +194,9 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <WorkerNavbar title="Profile Settings" />
+      <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>

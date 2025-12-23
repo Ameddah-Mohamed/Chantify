@@ -1,17 +1,15 @@
-const express = require('express');
+import express from 'express';
+import { createTask, getCompanyTasks, getAllTasks, updateTask, deleteTask, getTasksForApproval, approveTask } from '../controllers/task.controller.js';
+
 const router = express.Router();
-const {
-  createTask,
-  getCompanyTasks,
-  getAllTasks,
-  updateTask,
-  deleteTask
-} = require('../controllers/task.controller');
 
 // Routes (no authentication required)
 router.route('/')
   .get(getAllTasks)
   .post(createTask);
+
+router.route('/ready-for-approval')
+  .get(getTasksForApproval);
 
 router.route('/company/:companyId')
   .get(getCompanyTasks);
@@ -21,4 +19,7 @@ router.route('/:id')
   .put(updateTask)
   .delete(deleteTask);
 
-module.exports = router;
+router.route('/:id/approve')
+  .put(approveTask);
+
+export default router;
