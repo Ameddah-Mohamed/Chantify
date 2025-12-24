@@ -20,9 +20,7 @@ dotenv.config();
 import taskRoutes from './routes/taskRoutes.js';
 import simpleUserRoutes from './routes/simpleUserRoutes.js';
 import workerTaskRoutes from './routes/workerTaskRoutes.js';
-// const authRoutes = require('./routes/authRoutes');
-// const companyRoutes = require('./routes/companyRoutes');
-// const userRoutes = require('./routes/userRoutes');
+
 
 const app = express();
 
@@ -74,5 +72,4 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(` Server running on port ${PORT}`);
-  console.log(` MongoDB: ${process.env.MONGO_URI || 'Not configured'}`);
 });
