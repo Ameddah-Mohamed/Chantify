@@ -10,6 +10,13 @@ import WeeklyWorkerPage from './pages/worker/WeeklyTaskPage.jsx'
 import TaskWeeklyPage from './pages/Task/WeeklyTaskPage.jsx'
 import TaskDetailsPage from './pages/Task/TaskDetailsPage.jsx'
 import ProjectManagementPage from './pages/Admin/projects_Management.jsx'
+import Dashboard from './pages/manager/Dashboard';
+import Workers from './pages/manager/Workers';
+import TaskApproval from './pages/manager/TaskApproval';
+import JobTypes from './pages/manager/JobTypes';
+import Payments from './pages/manager/Payments';
+import PaymentDetails from './pages/manager/PaymentDetails';
+import Settings from './pages/manager/Settings';
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 createRoot(document.getElementById('root')).render(
@@ -19,10 +26,12 @@ createRoot(document.getElementById('root')).render(
         {/* Routes WITHOUT Navbar (Auth pages) */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/" element={<App />} />
 
         {/* Routes WITH Sidebar and Navbar */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<App />} />
+        
+         
+          <Route element={<Layout />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/worker/weekly" element={<WeeklyWorkerPage />} />
           <Route path="/tasks" element={<TaskWeeklyPage />} />

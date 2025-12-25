@@ -1,5 +1,5 @@
-const Task = require('../models/task.model');
-const asyncHandler = require('express-async-handler');
+import Task from '../models/task.model.js'; // Add .js extension
+import asyncHandler from 'express-async-handler';
 
 // @desc    Create a new task
 // @route   POST /api/tasks
@@ -113,7 +113,7 @@ const deleteTask = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = {
+export {
   createTask,
   getAllTasks,
   getCompanyTasks,

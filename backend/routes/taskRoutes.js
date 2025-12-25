@@ -1,12 +1,15 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+
+// 1. Changed require to import
+// 2. Added the mandatory .js extension
+import {
   createTask,
   getCompanyTasks,
   getAllTasks,
   updateTask,
   deleteTask
-} = require('../controllers/task.controller');
+} from '../controllers/task.controller.js';
 
 // Routes (no authentication required)
 router.route('/')
@@ -17,8 +20,8 @@ router.route('/company/:companyId')
   .get(getCompanyTasks);
 
 router.route('/:id')
-  .get(getAllTasks)
+  .get(getAllTasks) // Note: Usually this is a 'getOneTask' function
   .put(updateTask)
   .delete(deleteTask);
 
-module.exports = router;
+export default router;

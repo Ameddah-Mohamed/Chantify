@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import DaySection from "../../components/DaySection";
 import TaskCard from "../../components/TaskCard";
+import ClockInOutButton from "../../components/ClockInOutButton";
 import { taskAPI } from "../../API/taskAPI";
 
 export default function WeeklyTaskPage() {
 	const [tasks, setTasks] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	
+	// Replace with actual user ID from your auth context/state
+	const userId = "YOUR_USER_ID_HERE"; // TODO: Get from auth context
 
 	useEffect(() => {
 		fetchTasks();
@@ -59,6 +63,7 @@ export default function WeeklyTaskPage() {
 	return (
 		<div className="p-4 min-h-screen bg-gray-50">
 			<main className="max-w-7xl mx-auto space-y-6">
+				{/* Header with Refresh Button */}
 				<div className="flex justify-between items-center mb-6">
 					<h1 className="text-2xl font-bold text-gray-900">Weekly Tasks</h1>
 					<button 
@@ -69,6 +74,12 @@ export default function WeeklyTaskPage() {
 					</button>
 				</div>
 
+				{/* Clock In/Out Section */}
+				<div className="max-w-md">
+					<ClockInOutButton userId={userId} />
+				</div>
+
+				{/* Tasks Section */}
 				{tasks.length === 0 ? (
 					<div className="bg-white rounded-lg shadow p-8 text-center">
 						<p className="text-gray-500">No tasks found. Create your first task!</p>

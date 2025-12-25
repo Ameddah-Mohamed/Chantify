@@ -1,9 +1,11 @@
-const express = require('express');
-const {
+import express from 'express';
+// Use import and include the .js extension for local files
+import {
   getProfile,
   updateProfile
-} = require('../controllers/user.controller');
-const { protectRoute } = require('../middleware/protectRoute');
+} from '../controllers/user.controller.js';
+
+import { protectRoute } from '../middleware/protectRoute.js';
 
 const router = express.Router();
 
@@ -11,4 +13,4 @@ const router = express.Router();
 router.get("/profile", protectRoute, getProfile);
 router.put("/profile", protectRoute, updateProfile);
 
-module.exports = router;
+export default router;

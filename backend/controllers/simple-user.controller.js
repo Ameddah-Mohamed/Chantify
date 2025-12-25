@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+import asyncHandler from 'express-async-handler';
 
 // Simple mock users for demo (replace with real DB query when User model is converted to CommonJS)
 const mockUsers = [
@@ -78,7 +78,6 @@ const getUsers = asyncHandler(async (req, res) => {
     data: users
   });
 });
-
-module.exports = {
+export {
   getUsers
 };

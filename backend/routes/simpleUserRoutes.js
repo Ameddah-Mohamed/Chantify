@@ -1,8 +1,11 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { getUsers } = require('../controllers/simple-user.controller');
+
+// 1. Changed require to import
+// 2. Added the mandatory .js extension
+import { getUsers } from '../controllers/simple-user.controller.js';
 
 // Routes (no authentication required for demo)
 router.get('/', getUsers);
 
-module.exports = router;
+export default router;
