@@ -28,6 +28,11 @@ connectDB();
 
 const app = express();
 
+// Connect to MongoDB (non-blocking)
+connectDB().catch((error) => {
+  console.log('⚠️ MongoDB connection failed, continuing without database');
+});
+
 // CORS Configuration 
 app.use(cors({
   origin: "http://localhost:5173",

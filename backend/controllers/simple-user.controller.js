@@ -78,6 +78,5 @@ const getUsers = asyncHandler(async (req, res) => {
     data: users
   });
 });
-export {
-  getUsers
-};
+
+export { getUsers };

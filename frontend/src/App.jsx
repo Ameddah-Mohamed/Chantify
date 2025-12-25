@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import Sidebar from './components/AdminSidebar';
-import Dashboard from './pages/manager/Dashboard';
-import Workers from './pages/manager/Workers';
-import TaskApproval from './pages/manager/TaskApproval';
-import JobTypes from './pages/manager/JobTypes';
-import Payments from './pages/manager/Payments';
-import PaymentDetails from './pages/manager/PaymentDetails';
-import Settings from './pages/manager/Settings';
+import Dashboard from './pages/Admin/Dashboard';
+import CreateTask from './pages/Admin/CreateTask';
+import Workers from './pages/Admin/Workers';
+import TaskApproval from './pages/Admin/TaskApproval';
+import JobTypes from './pages/Admin/JobTypes';
+import Payments from './pages/Admin/Payments';
+import PaymentDetails from './pages/Admin/PaymentDetails';
+import Settings from './pages/Admin/Settings';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -31,6 +32,8 @@ const App = () => {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'createTask':
+        return <CreateTask />;
       case 'workers':
         return <Workers />;
       case 'taskApproval':

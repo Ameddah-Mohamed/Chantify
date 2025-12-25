@@ -34,6 +34,7 @@ createRoot(document.getElementById('root')).render(
           <Route element={<Layout />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/worker/weekly" element={<WeeklyWorkerPage />} />
+          <Route path="/worker/task/:taskId" element={<TaskDetailsPage />} />
           <Route path="/tasks" element={<TaskWeeklyPage />} />
           <Route path="/tasks/:id" element={<TaskDetailsPage />} />
           <Route path="/admin/projects" element={<ProjectManagementPage />} />

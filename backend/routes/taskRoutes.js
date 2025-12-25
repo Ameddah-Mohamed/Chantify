@@ -16,6 +16,9 @@ router.route('/')
   .get(getAllTasks)
   .post(createTask);
 
+router.route('/ready-for-approval')
+  .get(getTasksForApproval);
+
 router.route('/company/:companyId')
   .get(getCompanyTasks);
 

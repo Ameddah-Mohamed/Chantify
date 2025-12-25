@@ -52,6 +52,18 @@ export const taskAPI = {
       method: 'DELETE',
     });
   },
+
+  // Get tasks ready for approval (all workers completed)
+  getTasksForApproval: async () => {
+    return fetchAPI('/tasks/ready-for-approval');
+  },
+
+  // Approve a task
+  approveTask: async (taskId) => {
+    return fetchAPI(`/tasks/${taskId}/approve`, {
+      method: 'PUT',
+    });
+  },
 };
 
 export default taskAPI;

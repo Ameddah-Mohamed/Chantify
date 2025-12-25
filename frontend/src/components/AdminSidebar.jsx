@@ -19,6 +19,7 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
 
   const menuItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+    { id: 'createTask', icon: 'add_task', label: 'Create Task' },
     { id: 'workers', icon: 'group', label: 'Workers' },
     { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval' },
     { id: 'jobTypes', icon: 'work', label: 'Job Types' },
