@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TaskCard from "../../components/TaskCard";
-import ClockInOutButton from "../../components/ClockInOutButton";
+import WorkerNavbar from "../../components/WorkerNavbar";
 import { taskAPI } from "../../API/taskAPI";
 import { workerTaskAPI } from "../../API/workerTaskAPI";
 
@@ -10,9 +10,11 @@ export default function WeeklyTaskPage() {
 	const [workerTasks, setWorkerTasks] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const navigate = useNavigate();
 	
-	// Replace with actual user ID from your auth context/state
-	const userId = "YOUR_USER_ID_HERE"; // TODO: Get from auth context
+	// For now, we'll use a hardcoded worker ID
+	// In a real app, this would come from user authentication context
+	const currentWorkerId = "default-worker-id";
 
 	useEffect(() => {
 		fetchTasksAndStatuses();
@@ -116,9 +118,9 @@ export default function WeeklyTaskPage() {
 	}
 
 	return (
-		<div className="p-4 min-h-screen bg-gray-50">
-			<main className="max-w-7xl mx-auto space-y-6">
-				{/* Header with Refresh Button */}
+		<div className="min-h-screen bg-gray-50">
+			<WorkerNavbar title="Weekly Tasks" />
+			<main className="max-w-7xl mx-auto p-4 space-y-6">
 				<div className="flex justify-between items-center mb-6">
 					<h1 className="text-2xl font-bold text-gray-900">Weekly Tasks</h1>
 					<button 
@@ -129,29 +131,39 @@ export default function WeeklyTaskPage() {
 					</button>
 				</div>
 
-				{/* Clock In/Out Section */}
-				<div className="max-w-md">
-					<ClockInOutButton userId={userId} />
+				{/* Calendar Grid */}
+				<div className="space-y-6">
+					{weekDays.map((day) => {
+						const dayTasks = getTasksForDay(day.date);
+						return (
+							<div key={day.date} className="bg-white rounded-lg shadow p-6">
+								<h2 className="text-lg font-bold text-gray-900 mb-4">
+									{day.dayName}, {day.dayDate}
+								</h2>
+								
+								{dayTasks.length === 0 ? (
+									<p className="text-gray-500 text-sm">No tasks scheduled</p>
+								) : (
+									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+										{dayTasks.map((task) => (
+											<div 
+												key={task._id}
+												onClick={() => handleTaskClick(task._id)}
+												className="cursor-pointer hover:shadow-lg transition-shadow"
+											>
+												<TaskCard
+													task={{...task, status: workerTasks[task._id] || 'todo'}}
+													workerId={currentWorkerId}
+													onStatusUpdate={fetchTasksAndStatuses}
+												/>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})}
 				</div>
-
-				{/* Tasks Section */}
-				{tasks.length === 0 ? (
-					<div className="bg-white rounded-lg shadow p-8 text-center">
-						<p className="text-gray-500">No tasks found. Create your first task!</p>
-					</div>
-				) : (
-					<DaySection day="All Tasks" highlight>
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-							{tasks.map((task) => (
-								<TaskCard
-									key={task._id}
-									task={task}
-									onStatusUpdate={fetchTasks}
-								/>
-							))}
-						</div>
-					</DaySection>
-				)}
 			</main>
 		</div>
 	);
