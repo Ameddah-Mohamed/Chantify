@@ -6,12 +6,12 @@ const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
-    { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/' },
-    { id: 'workers', icon: 'group', label: 'Workers', path: '/worker/weekly' },
-    { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval', path: '/tasks' },
-    { id: 'jobTypes', icon: 'work', label: 'Job Types', path: '/job-types' },
-    { id: 'payments', icon: 'credit_card', label: 'Payments', path: '/payments' },
-    { id: 'settings', icon: 'settings', label: 'Settings', path: '/settings' },
+    { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/manager/dashboard' },
+    { id: 'workers', icon: 'group', label: 'Workers', path: '/manager/workers' },
+    { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval', path: '/manager/task-approval' },
+    { id: 'jobTypes', icon: 'work', label: 'Job Types', path: '/manager/job-types' },
+    { id: 'payments', icon: 'credit_card', label: 'Payments', path: '/manager/payments' },
+    { id: 'settings', icon: 'settings', label: 'Settings', path: '/manager/settings' },
   ];
 
   const handleLogout = async () => {

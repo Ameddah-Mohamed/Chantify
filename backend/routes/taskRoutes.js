@@ -1,8 +1,8 @@
 import express from 'express';
+import { getTasksForApproval } from '../controllers/task.controller.js';
 const router = express.Router();
 
-// 1. Changed require to import
-// 2. Added the mandatory .js extension
+
 import {
   createTask,
   getCompanyTasks,

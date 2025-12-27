@@ -1,5 +1,6 @@
-// frontend/src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// src/context/AuthContext.jsx
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -12,10 +13,11 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [authUser, setAuthUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Check if user is authenticated on mount
+  // Fetch current user on mount
   useEffect(() => {
     checkAuth();
   }, []);
@@ -23,44 +25,30 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       const response = await fetch('http://localhost:8000/api/auth/me', {
-        credentials: 'include', // Important: This sends cookies
+        credentials: 'include', // Important pour envoyer les cookies
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        setAuthUser(userData);
+        const data = await response.json();
+        setUser(data);
       } else {
-        setAuthUser(null);
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      setAuthUser(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password) => {
-    try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      setAuthUser(data);
-      return data;
-    } catch (error) {
-      throw error;
+  const login = (userData) => {
+    setUser(userData);
+    // Redirect based on role
+    if (userData.role === 'admin') {
+      navigate('/manager/dashboard');
+    } else {
+      navigate('/tasks');
     }
   };
 
@@ -70,15 +58,15 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         credentials: 'include',
       });
-      setAuthUser(null);
+      setUser(null);
+      navigate('/signin');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
 
   const value = {
-    authUser,
-    setAuthUser,
+    user,
     loading,
     login,
     logout,

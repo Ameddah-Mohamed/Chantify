@@ -31,6 +31,5 @@ const WorkerTaskSchema = new mongoose.Schema({
     timestamps: true
 });
 
-WorkerTaskSchema.index({ taskId: 1, workerId: 1 }, { unique: true });
 
 export default mongoose.model('WorkerTask', WorkerTaskSchema);

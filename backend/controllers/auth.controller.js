@@ -296,13 +296,15 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
-      .populate('companyId');
-    res.json(user);
+      .populate('companyId')
+      .populate('jobTypeId'); // ← Ajouté pour avoir les infos du job type
+
+    res.status(200).json(user);
   } catch (error) {
     console.log("ERROR in getMe controller", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 export const login = async (req, res) => {
   try {

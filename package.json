@@ -5,11 +5,11 @@
   "type": "module",
   "main": "backend/server.js",
  "scripts": {
-"backend": "nodemon backend/server.js",
-"frontend": "npm run dev --prefix frontend",
-"dev": "concurrently \"npm run backend\" \"npm run frontend\"",
-"start": "node backend/server.js",
-"test:db": "node backend/test-db.js"
+  "backend": "nodemon backend/server.js",
+  "frontend": "npm run dev --prefix frontend",
+  "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+  "start": "node backend/server.js",
+  "test:db": "node backend/test-db.js"
 },
   "repository": {
     "type": "git",

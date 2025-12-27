@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { workersAPI } from '../../API/workersAPI';
 
 const Workers = () => {
   const [workers, setWorkers] = useState([]);
+  const [pendingApplications, setPendingApplications] = useState([]);
   const [jobTypes, setJobTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [jobTypeFilter, setJobTypeFilter] = useState('All');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [workerToDelete, setWorkerToDelete] = useState(null);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'pending'
 
   useEffect(() => {
     fetchData();
@@ -18,11 +19,29 @@ const Workers = () => {
     try {
       setLoading(true);
       setError(null);
-      const [workersData, jobTypesData] = await Promise.all([
-        workersAPI.getWorkers(),
-        workersAPI.getJobTypes()
+
+      const [workersRes, pendingRes, jobTypesRes] = await Promise.all([
+        fetch('http://localhost:8000/api/company/users', {
+          credentials: 'include'
+        }),
+        fetch('http://localhost:8000/api/company/applications/pending', {
+          credentials: 'include'
+        }),
+        fetch('http://localhost:8000/api/jobtypes', {
+          credentials: 'include'
+        })
       ]);
+
+      if (!workersRes.ok) throw new Error('Failed to fetch workers');
+      if (!pendingRes.ok) throw new Error('Failed to fetch pending applications');
+      if (!jobTypesRes.ok) throw new Error('Failed to fetch job types');
+
+      const workersData = await workersRes.json();
+      const pendingData = await pendingRes.json();
+      const jobTypesData = await jobTypesRes.json();
+
       setWorkers(workersData);
+      setPendingApplications(pendingData);
       setJobTypes(jobTypesData);
     } catch (err) {
       setError(err.message);
@@ -32,17 +51,95 @@ const Workers = () => {
     }
   };
 
+  const handleApprove = async (userId) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/company/applications/approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to approve application');
+      }
+
+      await fetchData(); // Refresh data
+      alert('Application approved successfully!');
+    } catch (err) {
+      alert(err.message);
+      console.error('Error approving application:', err);
+    }
+  };
+
+  const handleReject = async (userId) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/company/applications/reject', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reject application');
+      }
+
+      await fetchData(); // Refresh data
+      alert('Application rejected');
+    } catch (err) {
+      alert(err.message);
+      console.error('Error rejecting application:', err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!workerToDelete) return;
 
     try {
-      await workersAPI.deleteWorker(workerToDelete._id);
+      const response = await fetch(`http://localhost:8000/api/company/users/${workerToDelete._id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete worker');
+      }
+
       await fetchData();
       setShowDeleteModal(false);
       setWorkerToDelete(null);
+      alert('Worker deleted successfully');
     } catch (err) {
       alert(err.message);
       console.error('Error deleting worker:', err);
+    }
+  };
+
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/company/users/${userId}/toggle-status`, {
+        method: 'PATCH',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to toggle status');
+      }
+
+      await fetchData();
+      alert(`Worker ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (err) {
+      alert(err.message);
+      console.error('Error toggling status:', err);
     }
   };
 
@@ -75,204 +172,310 @@ const Workers = () => {
           </div>
         )}
 
-        {/* Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-6">
-          <span className="text-sm font-medium text-[#8a7a60]">Filter by Job Type:</span>
-          <select 
-            value={jobTypeFilter}
-            onChange={(e) => setJobTypeFilter(e.target.value)}
-            className="rounded-lg border-0 bg-white py-2.5 px-4 text-[#181511] text-sm font-medium ring-1 ring-inset ring-[#e6e2db] focus:ring-2 focus:ring-[#1e2987] w-full sm:w-auto"
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-[#e6e2db]">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'active'
+                ? 'text-[#f3ae3f] border-b-2 border-[#f3ae3f]'
+                : 'text-[#8a7a60] hover:text-[#181511]'
+            }`}
           >
-            <option>All</option>
-            {jobTypes.map((jobType) => (
-              <option key={jobType._id} value={jobType.name}>
-                {jobType.name}
-              </option>
-            ))}
-          </select>
+            Active Workers ({workers.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2 font-medium transition-colors relative ${
+              activeTab === 'pending'
+                ? 'text-[#f3ae3f] border-b-2 border-[#f3ae3f]'
+                : 'text-[#8a7a60] hover:text-[#181511]'
+            }`}
+          >
+            Pending Applications ({pendingApplications.length})
+            {pendingApplications.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {pendingApplications.length}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block bg-white rounded-lg border border-[#e6e2db] overflow-hidden">
-          <table className="w-full">
-            <thead className="border-b border-[#e6e2db]">
-              <tr className="bg-white">
-                <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Name</th>
-                <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Email</th>
-                <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Phone</th>
-                <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Job Type</th>
-                <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Hourly Rate</th>
-                <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Status</th>
-                <th className="px-6 py-4 text-right text-[#8a7a60] text-xs font-medium uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        {/* Active Workers Tab */}
+        {activeTab === 'active' && (
+          <>
+            {/* Filter */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-6">
+              <span className="text-sm font-medium text-[#8a7a60]">Filter by Job Type:</span>
+              <select 
+                value={jobTypeFilter}
+                onChange={(e) => setJobTypeFilter(e.target.value)}
+                className="rounded-lg border-0 bg-white py-2.5 px-4 text-[#181511] text-sm font-medium ring-1 ring-inset ring-[#e6e2db] focus:ring-2 focus:ring-[#1e2987] w-full sm:w-auto"
+              >
+                <option>All</option>
+                {jobTypes.map((jobType) => (
+                  <option key={jobType._id} value={jobType.name}>
+                    {jobType.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-lg border border-[#e6e2db] overflow-hidden">
+              <table className="w-full">
+                <thead className="border-b border-[#e6e2db]">
+                  <tr className="bg-white">
+                    <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Name</th>
+                    <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Email</th>
+                    <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Phone</th>
+                    <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Job Type</th>
+                    <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Hourly Rate</th>
+                    <th className="px-6 py-4 text-left text-[#8a7a60] text-xs font-medium uppercase">Status</th>
+                    <th className="px-6 py-4 text-right text-[#8a7a60] text-xs font-medium uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredWorkers.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-12 text-center text-[#8a7a60]">
+                        No workers found. Add your first worker to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredWorkers.map((worker) => (
+                      <tr key={worker._id} className="border-t border-[#e6e2db] hover:bg-[#f8f7f5]">
+                        <td className="px-6 py-4 text-[#181511] text-sm font-medium">
+                          {worker.personalInfo?.firstName} {worker.personalInfo?.lastName}
+                        </td>
+                        <td className="px-6 py-4 text-[#8a7a60] text-sm">{worker.email}</td>
+                        <td className="px-6 py-4 text-[#8a7a60] text-sm">
+                          {worker.personalInfo?.phone || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-[#8a7a60] text-sm">
+                          {worker.jobTypeId?.name || 'Unassigned'}
+                        </td>
+                        <td className="px-6 py-4 text-[#8a7a60] text-sm">
+                          {worker.hourlyRate?.toFixed(2)} DZD/hr
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                            worker.isActive
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              worker.isActive ? 'bg-green-500' : 'bg-gray-400'
+                            }`}></span>
+                            {worker.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => handleToggleStatus(worker._id, worker.isActive)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                worker.isActive
+                                  ? 'hover:bg-gray-500/10 text-gray-600'
+                                  : 'hover:bg-green-500/10 text-green-600'
+                              }`}
+                            >
+                              {worker.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setWorkerToDelete(worker);
+                                setShowDeleteModal(true);
+                              }}
+                              className="px-3 py-1.5 rounded-lg hover:bg-red-500/10 text-red-500 text-sm font-medium transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View for Active Workers */}
+            <div className="md:hidden space-y-4">
               {filteredWorkers.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-[#8a7a60]">
-                    No workers found. Add your first worker to get started.
-                  </td>
-                </tr>
+                <div className="bg-white rounded-lg border border-[#e6e2db] p-8 text-center text-[#8a7a60]">
+                  No workers found.
+                </div>
               ) : (
                 filteredWorkers.map((worker) => (
-                  <tr key={worker._id} className="border-t border-[#e6e2db] hover:bg-[#f8f7f5]">
-                    <td className="px-6 py-4 text-[#181511] text-sm font-medium">
-                      {worker.personalInfo?.firstName} {worker.personalInfo?.lastName}
-                    </td>
-                    <td className="px-6 py-4 text-[#8a7a60] text-sm">{worker.email}</td>
-                    <td className="px-6 py-4 text-[#8a7a60] text-sm">
-                      {worker.personalInfo?.phone || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 text-[#8a7a60] text-sm">
-                      {worker.jobTypeId?.name || 'Unassigned'}
-                    </td>
-                    <td className="px-6 py-4 text-[#8a7a60] text-sm">
-                      {worker.hourlyRate?.toFixed(2)} DZD/hr
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium w-fit ${
+                  <div key={worker._id} className="bg-white rounded-lg border border-[#e6e2db] p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#181511]">
+                          {worker.personalInfo?.firstName} {worker.personalInfo?.lastName}
+                        </h3>
+                        <p className="text-[#8a7a60] text-sm">{worker.email}</p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                        worker.isActive
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          worker.isActive ? 'bg-green-500' : 'bg-gray-400'
+                        }`}></span>
+                        {worker.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-[#8a7a60] text-sm">Phone:</span>
+                        <span className="text-[#181511] font-medium">{worker.personalInfo?.phone || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#8a7a60] text-sm">Job Type:</span>
+                        <span className="text-[#181511] font-medium">{worker.jobTypeId?.name || 'Unassigned'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#8a7a60] text-sm">Hourly Rate:</span>
+                        <span className="text-[#181511] font-medium">{worker.hourlyRate?.toFixed(2)} DZD/hr</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleToggleStatus(worker._id, worker.isActive)}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
                           worker.isActive
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            worker.isActive ? 'bg-green-500' : 'bg-gray-400'
-                          }`}></span>
-                          {worker.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                        {worker.applicationStatus === 'pending' && (
-                          <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 w-fit">
-                            Pending Approval
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => window.location.href = `/manager/workers/${worker._id}/edit`}
-                          className="px-3 py-1.5 rounded-lg hover:bg-[#f3ae3f]/20 text-[#f3ae3f] text-sm font-medium transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setWorkerToDelete(worker);
-                            setShowDeleteModal(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg hover:bg-red-500/10 text-red-500 text-sm font-medium transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                            ? 'hover:bg-gray-500/10 text-gray-600 border-gray-300'
+                            : 'hover:bg-green-500/10 text-green-600 border-green-300'
+                        }`}
+                      >
+                        {worker.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setWorkerToDelete(worker);
+                          setShowDeleteModal(true);
+                        }}
+                        className="flex-1 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 text-sm font-medium transition-colors border border-red-500/30"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="md:hidden space-y-4">
-          {filteredWorkers.length === 0 ? (
-            <div className="bg-white rounded-lg border border-[#e6e2db] p-8 text-center text-[#8a7a60]">
-              No workers found. Add your first worker to get started.
             </div>
-          ) : (
-            filteredWorkers.map((worker) => (
-              <div key={worker._id} className="bg-white rounded-lg border border-[#e6e2db] p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-[#181511]">
-                      {worker.personalInfo?.firstName} {worker.personalInfo?.lastName}
-                    </h3>
-                    <p className="text-[#8a7a60] text-sm">{worker.email}</p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium w-fit ${
-                      worker.isActive
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        worker.isActive ? 'bg-green-500' : 'bg-gray-400'
-                      }`}></span>
-                      {worker.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    {worker.applicationStatus === 'pending' && (
-                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 w-fit">
-                        Pending
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-[#8a7a60] text-sm">Phone:</span>
-                    <span className="text-[#181511] font-medium">{worker.personalInfo?.phone || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#8a7a60] text-sm">Job Type:</span>
-                    <span className="text-[#181511] font-medium">{worker.jobTypeId?.name || 'Unassigned'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#8a7a60] text-sm">Hourly Rate:</span>
-                    <span className="text-[#181511] font-medium">{worker.hourlyRate?.toFixed(2)} DZD/hr</span>
-                  </div>
-                </div>
+          </>
+        )}
 
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => window.location.href = `/manager/workers/${worker._id}/edit`}
-                    className="flex-1 px-3 py-2 rounded-lg hover:bg-[#f3ae3f]/20 text-[#f3ae3f] text-sm font-medium transition-colors border border-[#f3ae3f]/30"
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setWorkerToDelete(worker);
-                      setShowDeleteModal(true);
-                    }}
-                    className="flex-1 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 text-sm font-medium transition-colors border border-red-500/30"
-                  >
-                    Delete
-                  </button>
-                </div>
+        {/* Pending Applications Tab */}
+        {activeTab === 'pending' && (
+          <div className="space-y-4">
+            {pendingApplications.length === 0 ? (
+              <div className="bg-white rounded-lg border border-[#e6e2db] p-12 text-center">
+                <p className="text-[#8a7a60] text-lg">No pending applications</p>
+                <p className="text-[#8a7a60] text-sm mt-2">New worker applications will appear here</p>
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              pendingApplications.map((application) => (
+                <div key={application._id} className="bg-white rounded-lg border border-[#e6e2db] p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 bg-[#f3ae3f] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-lg">
+                            {application.personalInfo?.firstName?.[0]}{application.personalInfo?.lastName?.[0]}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-[#181511]">
+                            {application.personalInfo?.firstName} {application.personalInfo?.lastName}
+                          </h3>
+                          <p className="text-[#8a7a60] text-sm">{application.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <span className="text-[#8a7a60]">Phone:</span>
+                          <span className="ml-2 text-[#181511] font-medium">
+                            {application.personalInfo?.phone || 'N/A'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#8a7a60]">Job Type:</span>
+                          <span className="ml-2 text-[#181511] font-medium">
+                            {application.jobTypeId?.name || 'Unassigned'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#8a7a60]">Hourly Rate:</span>
+                          <span className="ml-2 text-[#181511] font-medium">
+                            {application.hourlyRate?.toFixed(2)} DZD/hr
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#8a7a60]">Applied:</span>
+                          <span className="ml-2 text-[#181511] font-medium">
+                            {new Date(application.appliedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-2 md:ml-4">
+                      <button
+                        onClick={() => handleApprove(application._id)}
+                        className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(application._id)}
+                        className="px-6 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Summary Stats */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-[#e6e2db]">
-            <p className="text-[#8a7a60] text-sm">Total Workers</p>
-            <p className="text-2xl font-bold text-[#181511]">{workers.length}</p>
+        {activeTab === 'active' && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-[#e6e2db]">
+              <p className="text-[#8a7a60] text-sm">Total Workers</p>
+              <p className="text-2xl font-bold text-[#181511]">{workers.length}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-[#e6e2db]">
+              <p className="text-[#8a7a60] text-sm">Active Workers</p>
+              <p className="text-2xl font-bold text-green-600">
+                {workers.filter(w => w.isActive).length}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-[#e6e2db]">
+              <p className="text-[#8a7a60] text-sm">Pending Applications</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {pendingApplications.length}
+              </p>
+            </div>
           </div>
-          <div className="bg-white p-4 rounded-lg border border-[#e6e2db]">
-            <p className="text-[#8a7a60] text-sm">Active Workers</p>
-            <p className="text-2xl font-bold text-green-600">
-              {workers.filter(w => w.isActive).length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-[#e6e2db]">
-            <p className="text-[#8a7a60] text-sm">Pending Applications</p>
-            <p className="text-2xl font-bold text-yellow-600">
-              {workers.filter(w => w.applicationStatus === 'pending').length}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-4 md:p-6">
-              <h2 className="text-xl md:text-2xl font-bold text-[#181511] mb-4">Delete Worker</h2>
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-[#181511] mb-4">Delete Worker</h2>
               <p className="text-[#8a7a60] mb-6">
                 Are you sure you want to delete{' '}
                 <strong>
@@ -280,7 +483,7 @@ const Workers = () => {
                 </strong>
                 ? This action cannot be undone.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowDeleteModal(false);
