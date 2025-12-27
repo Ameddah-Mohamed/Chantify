@@ -6,8 +6,8 @@ import App from './App.jsx'
 import SignUp from './pages/auth/SignUp.jsx'
 import SignIn from './pages/auth/SignIn.jsx'
 import Profile from './pages/Profile.jsx'
-import WorkerLayout from './components/WorkerLayout.jsx'  // ← NOUVEAU
-import AdminLayout from './components/AdminLayout.jsx'    // ← NOUVEAU
+import WorkerLayout from './components/WorkerLayout.jsx'  
+import AdminLayout from './components/AdminLayout.jsx'    
 import WeeklyWorkerPage from './pages/worker/WeeklyTaskPage.jsx'
 import TaskWeeklyPage from './pages/Task/WeeklyTaskPage.jsx'
 import TaskDetailsPage from './pages/Task/TaskDetailsPage.jsx'
