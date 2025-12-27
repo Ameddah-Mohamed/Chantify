@@ -1,6 +1,12 @@
+// src/components/AdminSidebar.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ currentPage, setCurrentPage }) => {
+const AdminSidebar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -18,21 +24,23 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
   }, []);
 
   const menuItems = [
-    { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
-    { id: 'createTask', icon: 'add_task', label: 'Create Task' },
-    { id: 'workers', icon: 'group', label: 'Workers' },
-    { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval' },
-    { id: 'jobTypes', icon: 'work', label: 'Job Types' },
-    { id: 'payments', icon: 'credit_card', label: 'Payments' },
-    { id: 'settings', icon: 'settings', label: 'Settings' },
+    { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/manager/dashboard' },
+    { id: 'createTask', icon: 'add_task', label: 'Create Task', path: '/manager/create-task' }, 
+    { id: 'workers', icon: 'group', label: 'Workers', path: '/manager/workers' },
+    { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval', path: '/manager/task-approval' },
+    { id: 'jobTypes', icon: 'work', label: 'Job Types', path: '/manager/job-types' },
+    { id: 'payments', icon: 'credit_card', label: 'Payments', path: '/manager/payments' },
+    { id: 'settings', icon: 'settings', label: 'Settings', path: '/manager/settings' },
   ];
 
-  const handleMenuClick = (id) => {
-    setCurrentPage(id);
+  const handleMenuClick = (path) => {
+    navigate(path);
     if (isMobile) {
       setIsOpen(false);
     }
   };
+
+  const isActive = (path) => location.pathname === path;
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col justify-between">
@@ -55,9 +63,9 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => handleMenuClick(item.id)}
+              onClick={() => handleMenuClick(item.path)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                currentPage === item.id
+                isActive(item.path)
                   ? 'bg-white/20 font-bold'
                   : 'hover:bg-white/10'
               }`}
@@ -72,7 +80,7 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
       {/* Logout Section */}
       <div className="pt-4 border-t border-white/20">
         <button
-          onClick={() => console.log('Logout clicked')}
+          onClick={logout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors w-full"
         >
           <span className="material-symbols-outlined text-white">logout</span>
@@ -120,4 +128,4 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
   );
 };
 
-export default Sidebar;
+export default AdminSidebar;
