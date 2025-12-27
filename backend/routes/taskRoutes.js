@@ -1,7 +1,15 @@
 import express from 'express';
-import { createTask, getCompanyTasks, getAllTasks, updateTask, deleteTask, getTasksForApproval, approveTask } from '../controllers/task.controller.js';
-
 const router = express.Router();
+
+// 1. Changed require to import
+// 2. Added the mandatory .js extension
+import {
+  createTask,
+  getCompanyTasks,
+  getAllTasks,
+  updateTask,
+  deleteTask
+} from '../controllers/task.controller.js';
 
 // Routes (no authentication required)
 router.route('/')
@@ -15,11 +23,8 @@ router.route('/company/:companyId')
   .get(getCompanyTasks);
 
 router.route('/:id')
-  .get(getAllTasks)
+  .get(getAllTasks) // Note: Usually this is a 'getOneTask' function
   .put(updateTask)
   .delete(deleteTask);
-
-router.route('/:id/approve')
-  .put(approveTask);
 
 export default router;

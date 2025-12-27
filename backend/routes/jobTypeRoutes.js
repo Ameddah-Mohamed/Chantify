@@ -7,11 +7,11 @@ import {
   updateJobType,
   deleteJobType
 } from "../controllers/jobType.controller.js";
-import protectRoute from "../middleware/protectRoute.js";
+import { protectRoute } from "../middleware/protectRoute.js";
 
 const router = express.Router();
 
-// Public route - get job types by company email (for signup)
+// Public route - get job types by company email (for signup page)
 router.get("/by-company", getJobTypesByCompany);
 
 // Protected routes (require authentication)

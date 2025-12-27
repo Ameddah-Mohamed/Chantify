@@ -51,20 +51,27 @@ export const createJobType = async (req, res) => {
   try {
     const { name, hourlyRate, expectedHoursPerDay } = req.body;
 
+    // Check admin permission
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admin can create job types" });
     }
 
+    // Validate required fields
     if (!name || !hourlyRate) {
       return res.status(400).json({ error: "Name and hourly rate are required" });
     }
 
-    if(!expectedHoursPerDay){
-      return res.status(400).json({ error: "expectedHoursPerDay is required" });
+    if (!expectedHoursPerDay) {
+      return res.status(400).json({ error: "Expected hours per day is required" });
     }
 
+    // Validate values
     if (hourlyRate < 0) {
       return res.status(400).json({ error: "Hourly rate must be positive" });
+    }
+
+    if (expectedHoursPerDay < 0 || expectedHoursPerDay > 12) {
+      return res.status(400).json({ error: "Expected hours per day must be between 0 and 12" });
     }
 
     // Check if job type with same name already exists for this company
@@ -79,11 +86,12 @@ export const createJobType = async (req, res) => {
       });
     }
 
+    // Create new job type
     const newJobType = new JobType({
       name: name.trim(),
-      hourlyRate,
-      companyId: req.user.companyId,
-      expectedHoursPerDay
+      hourlyRate: Number(hourlyRate),
+      expectedHoursPerDay: Number(expectedHoursPerDay),
+      companyId: req.user.companyId
     });
 
     await newJobType.save();
@@ -104,24 +112,29 @@ export const updateJobType = async (req, res) => {
     const { id } = req.params;
     const { name, hourlyRate, expectedHoursPerDay, isActive } = req.body;
 
+    // Check admin permission
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admin can update job types" });
     }
 
+    // Validate hourly rate if provided
     if (hourlyRate !== undefined && hourlyRate < 0) {
       return res.status(400).json({ error: "Hourly rate must be positive" });
     }
 
-    if(expectedHoursPerDay < 0 || expectedHoursPerDay > 12){
-      return res.status(400).json({ error: "expectedHoursPerDay must be between 0 and 12" });
+    // Validate expected hours if provided
+    if (expectedHoursPerDay !== undefined && (expectedHoursPerDay < 0 || expectedHoursPerDay > 12)) {
+      return res.status(400).json({ error: "Expected hours per day must be between 0 and 12" });
     }
 
+    // Build update object
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
     if (hourlyRate !== undefined) updateData.hourlyRate = Number(hourlyRate);
     if (expectedHoursPerDay !== undefined) updateData.expectedHoursPerDay = Number(expectedHoursPerDay);
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
 
+    // Update job type
     const updatedJobType = await JobType.findOneAndUpdate(
       { _id: id, companyId: req.user.companyId },
       updateData,
@@ -136,7 +149,7 @@ export const updateJobType = async (req, res) => {
     if (hourlyRate !== undefined) {
       await User.updateMany(
         { jobTypeId: id, companyId: req.user.companyId },
-        { hourlyRate: hourlyRate }
+        { hourlyRate: Number(hourlyRate) }
       );
     }
 
@@ -155,6 +168,7 @@ export const deleteJobType = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Check admin permission
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admin can delete job types" });
     }
@@ -171,6 +185,7 @@ export const deleteJobType = async (req, res) => {
       });
     }
 
+    // Delete the job type
     const deletedJobType = await JobType.findOneAndDelete({
       _id: id,
       companyId: req.user.companyId

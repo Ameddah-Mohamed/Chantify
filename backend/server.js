@@ -1,4 +1,3 @@
-
 // server.js
 import express from "express";
 import dotenv from "dotenv";
@@ -6,21 +5,26 @@ import cookieParser from "cookie-parser";
 import connectDB from "./db/connection.js";
 import cors from 'cors';
 
-// Routes
+// Routes - Converted all to imports with .js extensions
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import jobTypeRoutes from "./routes/jobTypeRoutes.js"
+import jobTypeRoutes from "./routes/jobTypeRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js"; // Converted from require
+import simpleUserRoutes from "./routes/simpleUserRoutes.js"; // Converted from require
+import dashboardRoutes from './routes/dashboard.routes.js';
+import timeEntryRoutes from "./routes/timeEntry.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+
+
 
 
 // Load environment variables
-dotenv.config();
+// dotenv.config();
+dotenv.config({ path: './.env' });
 
-// Import routes
-import taskRoutes from './routes/taskRoutes.js';
-import simpleUserRoutes from './routes/simpleUserRoutes.js';
-import workerTaskRoutes from './routes/workerTaskRoutes.js';
-
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 
@@ -39,16 +43,16 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/jobtypes", jobTypeRoutes);
-
-// app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/users', simpleUserRoutes);
-app.use('/api/worker-tasks', workerTaskRoutes);
-// app.use('/api/companies', companyRoutes);
+app.use('/api/simple-users', simpleUserRoutes); 
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/time-entries', timeEntryRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -71,5 +75,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(` Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 });

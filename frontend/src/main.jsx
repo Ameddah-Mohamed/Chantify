@@ -10,6 +10,13 @@ import WeeklyWorkerPage from './pages/worker/WeeklyTaskPage.jsx'
 import TaskWeeklyPage from './pages/Task/WeeklyTaskPage.jsx'
 import TaskDetailsPage from './pages/Task/TaskDetailsPage.jsx'
 import ProjectManagementPage from './pages/Admin/projects_Management.jsx'
+import Dashboard from './pages/Admin/Dashboard';
+import Workers from './pages/Admin/Workers';
+import TaskApproval from './pages/Admin/TaskApproval';
+import JobTypes from './pages/Admin/JobTypes';
+import Payments from './pages/Admin/Payments';
+import PaymentDetails from './pages/Admin/PaymentDetails';
+import Settings from './pages/Admin/Settings';
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 createRoot(document.getElementById('root')).render(
@@ -19,10 +26,12 @@ createRoot(document.getElementById('root')).render(
         {/* Routes WITHOUT Navbar (Auth pages) */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/" element={<App />} />
 
         {/* Routes WITH Sidebar and Navbar */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<App />} />
+        
+         
+          <Route element={<Layout />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/worker/weekly" element={<WeeklyWorkerPage />} />
           <Route path="/worker/task/:taskId" element={<TaskDetailsPage />} />

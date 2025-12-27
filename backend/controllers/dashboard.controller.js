@@ -1,49 +1,66 @@
 // backend/controllers/dashboard.controller.js
 import User from "../models/user.model.js";
 import Company from "../models/company.model.js";
+import Task from "../models/task.model.js";
+import WorkerTask from "../models/workerTask.model.js";
 import mongoose from "mongoose";
 
-// Get dashboard statistics
+// Make sure Task has completedAt field when status becomes 'completed'
+// You might need to add a pre-save hook in task.model.js if not already there
+
 export const getDashboardStats = async (req, res) => {
   try {
     const companyId = req.user.companyId;
-    const Task = mongoose.model('Task'); // Assuming Task model exists
+    const { range = 'week' } = req.query;
 
-    // Get active workers count
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date();
+    
+    if (range === 'week') {
+      startDate.setDate(now.getDate() - 7);
+    } else if (range === 'month') {
+      startDate.setMonth(now.getMonth() - 1);
+    } else if (range === 'year') {
+      startDate.setFullYear(now.getFullYear() - 1);
+    }
+
+    // Get total workers
+    const totalWorkers = await User.countDocuments({
+      companyId,
+      role: 'worker'
+    });
+
+    // Get active workers
     const activeWorkers = await User.countDocuments({
       companyId,
       role: 'worker',
       isActive: true
     });
 
-    // Get pending applications count
+    // Get pending applications
     const company = await Company.findById(companyId);
     const pendingApplications = company?.pendingApplications?.length || 0;
 
-    // Get tasks statistics
-    const [activeTasks, completedTasks, inProgressTasks] = await Promise.all([
-      Task.countDocuments({ companyId, status: { $ne: 'completed' } }),
+    // Get task statistics
+    const [activeTasks, completedTasks, inProgressTasks, totalTasks] = await Promise.all([
+      Task.countDocuments({ companyId, status: { $in: ['todo', 'in-progress'] } }),
       Task.countDocuments({ companyId, status: 'completed' }),
-      Task.countDocuments({ companyId, status: 'in-progress' })
+      Task.countDocuments({ companyId, status: 'in-progress' }),
+      Task.countDocuments({ companyId })
     ]);
 
-    // Calculate total salaries for current month
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    // Calculate completion rate
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    const workers = await User.find({
-      companyId,
-      role: 'worker',
-      isActive: true
-    }).select('hourlyRate');
+    // Task Distribution
+    const taskDistribution = [
+      { name: 'To Do', value: await Task.countDocuments({ companyId, status: 'todo' }) },
+      { name: 'In Progress', value: inProgressTasks },
+      { name: 'Completed', value: completedTasks }
+    ];
 
-    // This is simplified - you'll need actual timesheet data
-    const estimatedMonthlySalaries = workers.reduce((sum, worker) => {
-      return sum + (worker.hourlyRate * 160); // Assuming 160 hours/month
-    }, 0);
-
-    // Get workers by job type
+    // Workers by Job Type
     const workersByJobType = await User.aggregate([
       {
         $match: {
@@ -55,7 +72,7 @@ export const getDashboardStats = async (req, res) => {
       {
         $lookup: {
           from: 'jobtypes',
-          localField: 'jobType',
+          localField: 'jobTypeId',
           foreignField: '_id',
           as: 'jobTypeInfo'
         }
@@ -78,51 +95,143 @@ export const getDashboardStats = async (req, res) => {
           count: 1,
           _id: 0
         }
-      }
+      },
+      { $sort: { count: -1 } }
     ]);
 
-    // Get task status distribution
-    const taskStatusDist = await Task.aggregate([
-      { $match: { companyId: new mongoose.Types.ObjectId(companyId) } },
-      { $group: { _id: '$status', value: { $sum: 1 } } },
+    // Task Completion Trend (last 7 days)
+    const taskCompletionTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      const [completed, created] = await Promise.all([
+        Task.countDocuments({
+          companyId,
+          status: 'completed',
+          completedAt: { $gte: date, $lt: nextDate }
+        }),
+        Task.countDocuments({
+          companyId,
+          createdAt: { $gte: date, $lt: nextDate }
+        })
+      ]);
+
+      taskCompletionTrend.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        completed,
+        created
+      });
+    }
+
+    // Recent Activity
+    const recentTasks = await WorkerTask.find({})
+      .populate({
+        path: 'workerId',
+        match: { companyId },
+        select: 'personalInfo'
+      })
+      .populate('taskId', 'title')
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    const recentActivity = recentTasks
+      .filter(wt => wt.workerId && wt.taskId)
+      .map(wt => {
+        const timeDiff = Math.floor((now - new Date(wt.updatedAt)) / 1000 / 60);
+        const timeStr = timeDiff < 60 ? `${timeDiff}m ago` : 
+                       timeDiff < 1440 ? `${Math.floor(timeDiff / 60)}h ago` : 
+                       `${Math.floor(timeDiff / 1440)}d ago`;
+
+        return {
+          type: wt.status === 'completed' ? 'task_completed' :
+                wt.status === 'in-progress' ? 'task_started' : 'task_assigned',
+          description: `${wt.workerId.personalInfo.firstName} ${
+            wt.status === 'completed' ? 'completed' :
+            wt.status === 'in-progress' ? 'started working on' : 'was assigned'
+          } "${wt.taskId.title}"`,
+          time: timeStr
+        };
+      });
+
+    // Top Performers
+    const topPerformers = await WorkerTask.aggregate([
+      {
+        $match: {
+          status: 'completed',
+          completedAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$workerId',
+          completedTasks: { $sum: 1 }
+        }
+      },
+      { $sort: { completedTasks: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'workerInfo'
+        }
+      },
+      {
+        $unwind: '$workerInfo'
+      },
+      {
+        $match: {
+          'workerInfo.companyId': new mongoose.Types.ObjectId(companyId)
+        }
+      },
+      {
+        $lookup: {
+          from: 'jobtypes',
+          localField: 'workerInfo.jobTypeId',
+          foreignField: '_id',
+          as: 'jobTypeInfo'
+        }
+      },
+      {
+        $unwind: {
+          path: '$jobTypeInfo',
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $project: {
           name: {
-            $switch: {
-              branches: [
-                { case: { $eq: ['$_id', 'todo'] }, then: 'To Do' },
-                { case: { $eq: ['$_id', 'in-progress'] }, then: 'In Progress' },
-                { case: { $eq: ['$_id', 'completed'] }, then: 'Completed' }
-              ],
-              default: 'Unknown'
-            }
+            $concat: [
+              '$workerInfo.personalInfo.firstName',
+              ' ',
+              '$workerInfo.personalInfo.lastName'
+            ]
           },
-          value: 1,
-          _id: 0
+          jobType: { $ifNull: ['$jobTypeInfo.name', 'Unassigned'] },
+          completedTasks: 1
         }
       }
     ]);
 
-    // Add colors to task status
-    const taskStatusColors = {
-      'To Do': '#8884d8',
-      'In Progress': '#f3ae3f',
-      'Completed': '#82ca9d'
-    };
-    const taskStatus = taskStatusDist.map(item => ({
-      ...item,
-      color: taskStatusColors[item.name] || '#ccc'
-    }));
-
     res.status(200).json({
-      stats: {
-        activeTasks,
-        activeWorkers,
-        salariesPaidMTD: estimatedMonthlySalaries,
-        pendingApplications
-      },
+      totalWorkers,
+      activeWorkers,
+      activeTasks,
+      completedTasks,
+      inProgressTasks,
+      pendingApplications,
+      completionRate,
+      taskDistribution,
       workersByJobType,
-      taskStatus
+      taskCompletionTrend,
+      recentActivity,
+      topPerformers
     });
 
   } catch (error) {
