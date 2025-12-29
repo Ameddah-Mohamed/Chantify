@@ -49,22 +49,24 @@ export const workerTaskAPI = {
   },
 
   // Upload file for worker task
-  uploadFile: async (taskId, workerId, file, fileName) => {
+  uploadFile: async (taskId, workerId, fileData, fileName) => {
     const response = await fetch(`${API_BASE_URL}/worker-tasks/${taskId}/${workerId}/upload`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({
         fileName,
-        fileData: file, // In real app, this would be FormData or base64
-        fileSize: file.length || 0,
+        fileData,
+        fileSize: fileData.length || 0,
         fileType: 'document'
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload file');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload file');
     }
 
     return response.json();

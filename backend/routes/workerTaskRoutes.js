@@ -3,7 +3,8 @@ import {
   updateWorkerTaskStatus,
   getWorkerTaskStatus,
   getTaskWorkerStatuses,
-  uploadWorkerTaskFile
+  uploadWorkerTaskFile,
+  cleanupInvalidWorkerTasks
 } from '../controllers/workerTask.controller.js';
 
 const router = express.Router();
@@ -27,5 +28,10 @@ router.get('/:taskId/all', getTaskWorkerStatuses);
 // @desc    Upload file for worker task
 // @access  Public
 router.post('/:taskId/:workerId/upload', uploadWorkerTaskFile);
+
+// @route   DELETE /api/worker-tasks/cleanup
+// @desc    Clean up invalid worker tasks
+// @access  Admin
+router.delete('/cleanup', cleanupInvalidWorkerTasks);
 
 export default router;

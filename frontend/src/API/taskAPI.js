@@ -2,21 +2,29 @@ const API_URL = 'http://localhost:8000/api';
 
 // Simple fetch wrapper
 const fetchAPI = async (endpoint, options = {}) => {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+      ...options,
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.error || 'Something went wrong');
+    if (!response.ok) {
+      throw new Error(data.error || data.message || `HTTP ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    if (error.name === 'SyntaxError') {
+      throw new Error('Invalid response from server');
+    }
+    throw error;
   }
-
-  return data;
 };
 
 export const taskAPI = {
@@ -60,8 +68,12 @@ export const taskAPI = {
 
   // Approve a task
   approveTask: async (taskId) => {
+    if (!taskId) {
+      throw new Error('Task ID is required');
+    }
     return fetchAPI(`/tasks/${taskId}/approve`, {
       method: 'PUT',
+      body: JSON.stringify({}),
     });
   },
 };

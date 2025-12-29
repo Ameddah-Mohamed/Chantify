@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { workerTaskAPI } from "../API/workerTaskAPI";
+import { useAuth } from "../context/AuthContext";
 
 const TaskCard = ({ task, onStatusUpdate }) => {
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const [workerTaskStatus, setWorkerTaskStatus] = useState('todo');
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
-    // Get current user from localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      setCurrentUser(user);
-      
-      // If user is a worker, fetch their task status
-      if (user.role === 'worker') {
-        fetchWorkerTaskStatus(task._id, user._id);
-      }
+    // If user is a worker, fetch their task status
+    if (currentUser?.role === 'worker') {
+      fetchWorkerTaskStatus(task._id, currentUser._id);
     }
-  }, [task._id]);
+  }, [task._id, currentUser]);
 
   const fetchWorkerTaskStatus = async (taskId, workerId) => {
     try {
@@ -90,6 +84,30 @@ const TaskCard = ({ task, onStatusUpdate }) => {
     }
   };
 
+  const handleStatusChangeSpecific = async (newStatus) => {
+    if (!currentUser) {
+      alert('Please login to update task status');
+      return;
+    }
+    
+    if (currentUser.role !== 'worker' || loading) return;
+
+    setLoading(true);
+    try {
+      await workerTaskAPI.updateStatus(task._id, currentUser._id, newStatus);
+      setWorkerTaskStatus(newStatus);
+      
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+    } catch (error) {
+      console.error('Failed to update worker task status:', error);
+      alert('Failed to update task status: ' + (error.message || 'Please try again'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Determine which status to display based on user role
   const displayStatus = currentUser?.role === 'worker' ? workerTaskStatus : task.status;
   const statusDisplay = getStatusDisplay(displayStatus);
@@ -103,25 +121,59 @@ const TaskCard = ({ task, onStatusUpdate }) => {
       {/* Project */}
       <p className="text-gray-600 text-sm">Project {task.project || 'N/A'}</p>
       
-      {/* Status and Button */}
-      <div className="flex items-center justify-between mt-2 gap-3">
-        <div className="flex flex-col">
-          <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusDisplay.color}`}>
-            {statusDisplay.label}
-          </span>
+      {/* Status and Buttons */}
+      <div className="mt-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusDisplay.color}`}>
+              {statusDisplay.label}
+            </span>
+            {currentUser?.role === 'worker' && (
+              <span className="text-xs text-gray-500">Your Status</span>
+            )}
+          </div>
+          
+          {/* Status Update Buttons */}
           {currentUser?.role === 'worker' && (
-            <span className="text-xs text-gray-500 mt-1">Your Status</span>
+            <div className="flex gap-1 mt-2">
+              <button
+                onClick={() => handleStatusChangeSpecific('todo')}
+                disabled={loading || workerTaskStatus === 'todo'}
+                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  workerTaskStatus === 'todo'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                {loading && workerTaskStatus === 'todo' ? '...' : 'Todo'}
+              </button>
+              
+              <button
+                onClick={() => handleStatusChangeSpecific('in-progress')}
+                disabled={loading || workerTaskStatus === 'in-progress'}
+                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  workerTaskStatus === 'in-progress'
+                    ? 'bg-orange-300 text-orange-700 cursor-not-allowed'
+                    : 'bg-orange-200 text-orange-800 hover:bg-orange-300'
+                }`}
+              >
+                {loading && workerTaskStatus === 'in-progress' ? '...' : 'Progress'}
+              </button>
+              
+              <button
+                onClick={() => handleStatusChangeSpecific('completed')}
+                disabled={loading || workerTaskStatus === 'completed'}
+                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  workerTaskStatus === 'completed'
+                    ? 'bg-green-300 text-green-700 cursor-not-allowed'
+                    : 'bg-green-200 text-green-800 hover:bg-green-300'
+                }`}
+              >
+                {loading && workerTaskStatus === 'completed' ? '...' : 'Done'}
+              </button>
+            </div>
           )}
         </div>
-        {currentUser?.role === 'worker' && buttonConfig.nextStatus && (
-          <button 
-            onClick={handleStatusChange}
-            disabled={loading}
-            className={`min-w-[84px] h-8 px-4 rounded-lg text-white text-sm font-medium ${buttonConfig.color} disabled:opacity-50 disabled:cursor-not-allowed transition`}
-          >
-            {loading ? '...' : buttonConfig.label}
-          </button>
-        )}
       </div>
     </div>
   );

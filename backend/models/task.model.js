@@ -37,9 +37,20 @@ const taskSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  status: {
+    type: String,
+    enum: ['pending', 'in-progress', 'completed', 'approved'],
+    default: 'pending'
+  },
   approvedAt: {
     type: Date
   },
+  workerFiles: [{
+    fileName: String,
+    filePath: String,
+    uploadedAt: Date,
+    uploadedBy: String
+  }],
   dueDate: Date,
   completionNotes: {
     type: String,

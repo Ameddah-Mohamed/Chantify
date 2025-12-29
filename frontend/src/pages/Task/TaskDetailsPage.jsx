@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskAPI } from '../../API/taskAPI';
 import { workerTaskAPI } from '../../API/workerTaskAPI';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TaskDetailsPage() {
   const { taskId } = useParams();
@@ -13,7 +14,7 @@ export default function TaskDetailsPage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [workerTaskStatus, setWorkerTaskStatus] = useState('todo');
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     fetchTask();
@@ -23,21 +24,16 @@ export default function TaskDetailsPage() {
     try {
       setLoading(true);
       
-      // Get current user
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        setCurrentUser(user);
-        
-        // Fetch worker task status if user is a worker
-        if (user.role === 'worker') {
-          try {
-            const statusResponse = await workerTaskAPI.getStatus(taskId, user._id);
-            setWorkerTaskStatus(statusResponse.data.status || 'todo');
-          } catch (err) {
-            console.log('No worker task status found, defaulting to todo');
-            setWorkerTaskStatus('todo');
-          }
+      // Fetch worker task status if user is a worker
+      if (currentUser?.role === 'worker') {
+        try {
+          const statusResponse = await workerTaskAPI.getStatus(taskId, currentUser._id);
+          setWorkerTaskStatus(statusResponse.data.status || 'todo');
+          // Load files from worker task
+          setFiles(statusResponse.data.files || []);
+        } catch (err) {
+          console.log('No worker task status found, defaulting to todo');
+          setWorkerTaskStatus('todo');
         }
       }
       
@@ -46,9 +42,6 @@ export default function TaskDetailsPage() {
       const foundTask = response.data?.find(t => t._id === taskId);
       if (foundTask) {
         setTask(foundTask);
-        // Load files from localStorage (simulating file storage)
-        const storedFiles = localStorage.getItem(`task_${taskId}_files`);
-        setFiles(storedFiles ? JSON.parse(storedFiles) : []);
       } else {
         setError('Task not found');
       }
@@ -63,24 +56,35 @@ export default function TaskDetailsPage() {
 
   const handleFileUpload = async (e) => {
     const uploadedFiles = Array.from(e.target.files);
+    
+    if (!currentUser || currentUser.role !== 'worker') {
+      alert('Only workers can upload files');
+      return;
+    }
+    
     setUploadingFile(true);
     
     try {
-      // Simulate file upload - in production, send to backend
-      const newFiles = uploadedFiles.map(file => ({
-        id: Date.now() + Math.random(),
-        name: file.name,
-        size: file.size,
-        uploadedAt: new Date().toLocaleString(),
-        type: file.type
-      }));
+      for (const file of uploadedFiles) {
+        // Convert file to base64 for simple storage
+        const reader = new FileReader();
+        const fileData = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        
+        // Upload to backend
+        await workerTaskAPI.uploadFile(taskId, currentUser._id, fileData, file.name);
+      }
       
-      const updatedFiles = [...files, ...newFiles];
-      setFiles(updatedFiles);
-      localStorage.setItem(`task_${taskId}_files`, JSON.stringify(updatedFiles));
+      // Refresh files by fetching updated worker task
+      const response = await workerTaskAPI.getStatus(taskId, currentUser._id);
+      setFiles(response.data.files || []);
+      
+      alert(`Successfully uploaded ${uploadedFiles.length} file(s)`);
     } catch (err) {
       console.error('Error uploading file:', err);
-      alert('Failed to upload file');
+      alert('Failed to upload file: ' + err.message);
     } finally {
       setUploadingFile(false);
     }
