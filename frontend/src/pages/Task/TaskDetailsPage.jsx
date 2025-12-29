@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskAPI } from '../../API/taskAPI';
+import { workerTaskAPI } from '../../API/workerTaskAPI';
 
 export default function TaskDetailsPage() {
   const { taskId } = useParams();
@@ -11,6 +12,8 @@ export default function TaskDetailsPage() {
   const [files, setFiles] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [workerTaskStatus, setWorkerTaskStatus] = useState('todo');
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     fetchTask();
@@ -19,6 +22,25 @@ export default function TaskDetailsPage() {
   const fetchTask = async () => {
     try {
       setLoading(true);
+      
+      // Get current user
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
+        
+        // Fetch worker task status if user is a worker
+        if (user.role === 'worker') {
+          try {
+            const statusResponse = await workerTaskAPI.getStatus(taskId, user._id);
+            setWorkerTaskStatus(statusResponse.data.status || 'todo');
+          } catch (err) {
+            console.log('No worker task status found, defaulting to todo');
+            setWorkerTaskStatus('todo');
+          }
+        }
+      }
+      
       // For now, we'll fetch all tasks and find the one we need
       const response = await taskAPI.getAllTasks();
       const foundTask = response.data?.find(t => t._id === taskId);
@@ -65,18 +87,30 @@ export default function TaskDetailsPage() {
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (!currentUser) {
+      alert('Please login to update task status');
+      return;
+    }
+    
     setUpdating(true);
     try {
-      await taskAPI.updateTask(taskId, { status: newStatus });
-      setTask(prev => ({
-        ...prev,
-        status: newStatus,
-        startedAt: newStatus === 'in-progress' ? new Date().toISOString() : prev.startedAt,
-        completedAt: newStatus === 'completed' ? new Date().toISOString() : prev.completedAt
-      }));
+      if (currentUser.role === 'worker') {
+        // Update worker task status
+        await workerTaskAPI.updateStatus(taskId, currentUser._id, newStatus);
+        setWorkerTaskStatus(newStatus);
+      } else {
+        // Admin updating main task
+        await taskAPI.updateTask(taskId, { status: newStatus });
+        setTask(prev => ({
+          ...prev,
+          status: newStatus,
+          startedAt: newStatus === 'in-progress' ? new Date().toISOString() : prev.startedAt,
+          completedAt: newStatus === 'completed' ? new Date().toISOString() : prev.completedAt
+        }));
+      }
     } catch (err) {
       console.error('Error updating status:', err);
-      alert('Failed to update task status');
+      alert('Failed to update task status: ' + (err.message || 'Unknown error'));
     } finally {
       setUpdating(false);
     }
@@ -90,9 +124,9 @@ export default function TaskDetailsPage() {
 
   const getStatusColor = (status) => {
     const colors = {
-      'todo': 'bg-gray-200 text-gray-800',
-      'in-progress': 'bg-orange-200 text-orange-800',
-      'completed': 'bg-blue-200 text-blue-800'
+      'todo': 'bg-gray-200 text-gray-800 border border-gray-300',
+      'in-progress': 'bg-orange-200 text-orange-800 border border-orange-300',
+      'completed': 'bg-green-200 text-green-800 border border-green-300'
     };
     return colors[status] || colors['todo'];
   };
@@ -138,86 +172,144 @@ export default function TaskDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <h3>Task Details</h3>
       <div className="max-w-4xl mx-auto p-4">
         {/* Header */}
         <div className="mb-6">
           <button 
             onClick={() => navigate(-1)}
-            className="mb-4 px-4 py-2 text-blue-600 hover:text-blue-800 font-medium"
+            className="mb-6 px-4 py-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
           >
             ← Back to Tasks
           </button>
+          
+          {/* Main Title */}
+          <h1 className="text-5xl font-bold text-gray-900 mb-2">Task Details</h1>
+          <p className="text-lg text-gray-600">View and manage task information</p>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow p-8 space-y-6">
+        <div className="bg-white rounded-xl shadow-lg p-8 space-y-8">
           {/* Task Title and Status */}
-          <div>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{task.title}</h1>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(task.status)}`}>
-                  {getStatusLabel(task.status)}
-                </span>
+          <div className="border-b border-gray-200 pb-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <h2 className="text-4xl font-bold text-indigo-900 mb-3">{task.title}</h2>
+                <div className="flex items-center gap-4">
+                  <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                    currentUser?.role === 'worker' ? getStatusColor(workerTaskStatus) : getStatusColor(task.status)
+                  }`}>
+                    {getStatusLabel(currentUser?.role === 'worker' ? workerTaskStatus : task.status)}
+                  </span>
+                  {currentUser?.role === 'worker' && (
+                    <span className="text-sm text-gray-500">Your Status</span>
+                  )}
+                </div>
               </div>
             </div>
+            
+            {/* Status Update Buttons */}
+            {currentUser && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Update Status</h3>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleStatusChange('todo')}
+                    disabled={updating || (currentUser.role === 'worker' ? workerTaskStatus === 'todo' : task.status === 'todo')}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      (currentUser.role === 'worker' ? workerTaskStatus === 'todo' : task.status === 'todo')
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    }`}
+                  >
+                    {updating ? 'Updating...' : 'To Do'}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleStatusChange('in-progress')}
+                    disabled={updating || (currentUser.role === 'worker' ? workerTaskStatus === 'in-progress' : task.status === 'in-progress')}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      (currentUser.role === 'worker' ? workerTaskStatus === 'in-progress' : task.status === 'in-progress')
+                        ? 'bg-orange-300 text-orange-700 cursor-not-allowed'
+                        : 'bg-orange-200 text-orange-800 hover:bg-orange-300'
+                    }`}
+                  >
+                    {updating ? 'Updating...' : 'In Progress'}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleStatusChange('completed')}
+                    disabled={updating || (currentUser.role === 'worker' ? workerTaskStatus === 'completed' : task.status === 'completed')}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      (currentUser.role === 'worker' ? workerTaskStatus === 'completed' : task.status === 'completed')
+                        ? 'bg-green-300 text-green-700 cursor-not-allowed'
+                        : 'bg-green-200 text-green-800 hover:bg-green-300'
+                    }`}
+                  >
+                    {updating ? 'Updating...' : 'Completed'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Task Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Project */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
-              <p className="text-gray-900">{task.project || 'N/A'}</p>
+              <label className="block text-sm font-bold text-indigo-700 mb-2 uppercase tracking-wide">Project</label>
+              <p className="text-lg text-gray-900 font-medium">{task.project || 'N/A'}</p>
             </div>
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <p className="text-gray-900">{task.location || 'N/A'}</p>
+              <label className="block text-sm font-bold text-indigo-700 mb-2 uppercase tracking-wide">Location</label>
+              <p className="text-lg text-gray-900 font-medium">{task.location || 'N/A'}</p>
             </div>
 
             {/* Due Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-              <p className="text-gray-900">
+              <label className="block text-sm font-bold text-indigo-700 mb-2 uppercase tracking-wide">Due Date</label>
+              <p className="text-lg text-gray-900 font-medium">
                 {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
               </p>
             </div>
 
             {/* Status Timeline */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Timeline</label>
-              <div className="space-y-2 text-sm text-gray-600">
+              <label className="block text-sm font-bold text-indigo-700 mb-2 uppercase tracking-wide">Timeline</label>
+              <div className="space-y-2 text-sm text-gray-700">
                 {task.createdAt && (
-                  <p>Created: {new Date(task.createdAt).toLocaleString()}</p>
+                  <p><span className="font-medium">Created:</span> {new Date(task.createdAt).toLocaleString()}</p>
                 )}
                 {task.startedAt && (
-                  <p>Started: {new Date(task.startedAt).toLocaleString()}</p>
+                  <p><span className="font-medium">Started:</span> {new Date(task.startedAt).toLocaleString()}</p>
                 )}
                 {task.completedAt && (
-                  <p>Completed: {new Date(task.completedAt).toLocaleString()}</p>
+                  <p><span className="font-medium">Completed:</span> {new Date(task.completedAt).toLocaleString()}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <p className="text-gray-700 whitespace-pre-wrap">{task.description || 'No description'}</p>
+          <div className="border-t border-gray-200 pt-6">
+            <label className="block text-sm font-bold text-indigo-700 mb-3 uppercase tracking-wide">Description</label>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-gray-800 text-base leading-relaxed whitespace-pre-wrap">
+                {task.description || 'No description provided'}
+              </p>
+            </div>
           </div>
 
           {/* Assigned Workers */}
           {task.assignedTo && task.assignedTo.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+            <div className="border-t border-gray-200 pt-6">
+              <label className="block text-sm font-bold text-indigo-700 mb-3 uppercase tracking-wide">Assigned Workers</label>
               <div className="flex flex-wrap gap-2">
                 {task.assignedTo.map((userId) => (
                   <span 
                     key={userId}
-                    className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-full text-sm"
+                    className="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-800 rounded-full text-sm font-medium"
                   >
                     Worker #{userId}
                   </span>
@@ -226,36 +318,9 @@ export default function TaskDetailsPage() {
             </div>
           )}
 
-          {/* Status Actions */}
-          {task.status !== 'completed' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-700 font-medium mb-3">Update Task Status</p>
-              <div className="flex gap-3 flex-wrap">
-                {task.status === 'todo' && (
-                  <button 
-                    onClick={() => handleStatusChange('in-progress')}
-                    disabled={updating}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
-                  >
-                    {updating ? 'Updating...' : 'Start Task'}
-                  </button>
-                )}
-                {task.status === 'in-progress' && (
-                  <button 
-                    onClick={() => handleStatusChange('completed')}
-                    disabled={updating}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
-                  >
-                    {updating ? 'Updating...' : 'Mark Complete'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* File Upload Section */}
-          <div className="border-t pt-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Attachments</h2>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-xl font-bold text-indigo-800 mb-4">Attachments & Files</h3>
             
             {/* Upload Area */}
             <div className="mb-6">

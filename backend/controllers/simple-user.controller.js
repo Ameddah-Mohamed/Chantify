@@ -87,3 +87,29 @@ const getUsers = asyncHandler(async (req, res) => {
 });
 
 export { getUsers };
+
+// Test endpoint to check all users
+export const getAllUsersTest = async (req, res) => {
+  try {
+    const allUsers = await User.find({})
+      .select('personalInfo email role isActive')
+      .sort({ createdAt: -1 });
+    
+    console.log('All users in database:', allUsers.length);
+    allUsers.forEach(user => {
+      console.log(`- ${user.personalInfo.firstName} ${user.personalInfo.lastName} (${user.email}) - Role: ${user.role}, Active: ${user.isActive}`);
+    });
+    
+    res.json({
+      success: true,
+      count: allUsers.length,
+      data: allUsers
+    });
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch all users'
+    });
+  }
+};
