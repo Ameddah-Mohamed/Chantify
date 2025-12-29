@@ -15,6 +15,7 @@ export default function TaskForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,6 +44,7 @@ export default function TaskForm() {
     });
     setError(null);
     setSuccess(false);
+    setSuccessMessage("");
   };
 
   const handleSubmit = async (e) => {
@@ -51,14 +53,40 @@ export default function TaskForm() {
     setError(null);
     setSuccess(false);
 
+    // Validate required fields
+    if (!formData.title.trim()) {
+      setError('Task title is required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.assignedTo.length === 0) {
+      setError('Please select at least one worker to assign this task to');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await taskAPI.createTask(formData);
+      // Get current user data from localStorage or context
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      const taskData = {
+        ...formData,
+        companyId: currentUser.company?._id,
+        assignedBy: currentUser._id
+      };
+      
+      const response = await taskAPI.createTask(taskData);
       console.log('Task created:', response.data);
       setSuccess(true);
+      setSuccessMessage(`Task "${formData.title}" created and assigned to ${formData.assignedTo.length} worker(s) successfully!`);
       handleClear();
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccess(false);
+        setSuccessMessage("");
+      }, 5000);
     } catch (err) {
       setError(err.message || 'Failed to create task');
       console.error('Error creating task:', err);
@@ -77,7 +105,7 @@ export default function TaskForm() {
       
       {success && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-          Task created successfully!
+          {successMessage}
         </div>
       )}
 

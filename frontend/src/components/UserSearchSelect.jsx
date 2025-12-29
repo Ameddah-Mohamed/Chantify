@@ -45,8 +45,12 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
 
   const getSelectedUserNames = () => {
     const selected = users.filter(u => selectedUsers.includes(u._id));
-    if (selected.length === 0) return 'Select workers';
-    if (selected.length === 1) return `${selected[0].personalInfo.firstName} ${selected[0].personalInfo.lastName}`;
+    if (selected.length === 0) return 'Select workers to assign task';
+    if (selected.length === 1) {
+      const user = selected[0];
+      const jobType = user.jobTypeId?.name || 'N/A';
+      return `${user.personalInfo.firstName} ${user.personalInfo.lastName} (${jobType})`;
+    }
     return `${selected.length} workers selected`;
   };
 
@@ -159,6 +163,11 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
                       {user.personalInfo.firstName} {user.personalInfo.lastName}
                     </p>
                     <p className="text-xs text-gray-500">{user.email}</p>
+                    {user.jobTypeId && (
+                      <p className="text-xs text-blue-600 font-medium">
+                        {user.jobTypeId.name} • {user.jobTypeId.hourlyRate} DH/hour
+                      </p>
+                    )}
                   </div>
                 </button>
               ))
