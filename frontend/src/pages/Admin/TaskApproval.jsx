@@ -9,29 +9,70 @@ const TaskApproval = () => {
 
   useEffect(() => {
     fetchTasksForApproval();
+    // Test basic API connectivity
+    testAPIConnection();
   }, []);
+
+  const testAPIConnection = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/tasks/test');
+      const data = await response.json();
+      console.log('API Test Response:', data);
+    } catch (err) {
+      console.error('API Test Failed:', err);
+    }
+  };
 
   const fetchTasksForApproval = async () => {
     try {
       setLoading(true);
       const response = await taskAPI.getTasksForApproval();
+      console.log('Fetched tasks response:', response);
       setTasks(response.data || []);
       setError(null);
     } catch (err) {
       setError(err.message || 'Failed to fetch tasks for approval');
       console.error('Error fetching tasks for approval:', err);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleApprove = async (taskId) => {
+    if (!taskId) {
+      alert('Invalid task ID');
+      return;
+    }
+    
     try {
-      await taskAPI.approveTask(taskId);
-      // Remove approved task from the list
-      setTasks(tasks.filter(task => task._id !== taskId));
+      console.log('Attempting to approve task:', taskId);
+      
+      // Direct fetch without wrapper to isolate issues
+      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({})
+      });
+      
+      console.log('Direct fetch response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Direct fetch response data:', data);
+      
+      if (response.ok && data.success) {
+        // Remove approved task from the list
+        setTasks(prevTasks => prevTasks.filter(task => task._id !== taskId));
+        alert('Task approved successfully!');
+      } else {
+        throw new Error(data.error || 'Approval failed');
+      }
     } catch (err) {
-      alert('Failed to approve task: ' + err.message);
+      console.error('Approve error:', err);
+      alert('Failed to approve task: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -195,6 +236,39 @@ const TaskApproval = () => {
                         ))}
                       </div>
                     </div>
+                    
+                    {/* All Worker Files Section */}
+                    {task.allWorkerFiles && task.allWorkerFiles.length > 0 && (
+                      <div className="border-t border-gray-200 pt-4 mt-4">
+                        <h4 className="font-medium text-gray-900 mb-3">📁 All Uploaded Files ({task.allWorkerFiles.length}):</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {task.allWorkerFiles.map((file, index) => (
+                            <div key={index} className="border border-blue-200 rounded-lg p-3 bg-blue-50 hover:bg-blue-100 transition-colors">
+                              <div className="flex items-start gap-2">
+                                <span className="text-blue-600 mt-1">📄</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-blue-900 truncate" title={file.fileName}>
+                                    {file.fileName}
+                                  </p>
+                                  <p className="text-xs text-blue-700 mt-1">
+                                    By: {file.workerInfo?.personalInfo?.firstName} {file.workerInfo?.personalInfo?.lastName}
+                                  </p>
+                                  {file.uploadedAt && (
+                                    <p className="text-xs text-blue-600 mt-1">
+                                      {new Date(file.uploadedAt).toLocaleDateString()} at{' '}
+                                      {new Date(file.uploadedAt).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

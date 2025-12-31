@@ -15,6 +15,7 @@ import simpleUserRoutes from "./routes/simpleUserRoutes.js";
 import dashboardRoutes from './routes/dashboard.routes.js';
 import timeEntryRoutes from "./routes/timeEntry.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import workerTaskRoutes from "./routes/workerTaskRoutes.js";
 
 // Load environment variables
 dotenv.config({ path: './.env' });
@@ -32,9 +33,10 @@ app.use(express.json());
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/users", simpleUserRoutes); // Changed to use simpleUserRoutes for workers
 app.use("/api/jobtypes", jobTypeRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/worker-tasks', workerTaskRoutes);
 app.use('/api/simple-users', simpleUserRoutes); 
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/time-entries', timeEntryRoutes);
