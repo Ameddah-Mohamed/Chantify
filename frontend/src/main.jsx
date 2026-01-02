@@ -106,7 +106,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/manager/dashboard" element={<Dashboard />} />
             <Route path="/manager/worker-requests" element={<WorkerRequests />} />
             <Route path="/tasks" element={<TaskWeeklyPage />} />
-            <Route path="manager/create-task" element={<CreateTask />} />
+            <Route path="/manager/create-task" element={<CreateTask />} />
             <Route path="/manager/workers" element={<Workers />} />
             <Route path="/manager/workers/:workerId" element={<WorkerProfile />} />
             <Route path="/manager/task-approval" element={<TaskApproval />} />

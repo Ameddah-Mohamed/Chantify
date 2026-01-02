@@ -91,6 +91,23 @@ const getCompanyTasks = asyncHandler(async (req, res) => {
   
   const tasks = await Task.find({ companyId })
     .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    count: tasks.length,
+    data: tasks
+  });
+});
+
+// @desc    Get tasks assigned to a specific user
+// @route   GET /api/tasks/user/:userId
+// @access  Public
+const getUserTasks = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  
+  const tasks = await Task.find({ 
+    assignedTo: { $in: [userId] }
+  }).sort({ createdAt: -1 });
   
   res.json({
     success: true,
@@ -248,4 +265,4 @@ const approveTask = asyncHandler(async (req, res) => {
   }
 });
 
-export { createTask, getAllTasks, getCompanyTasks, updateTask, deleteTask, getTasksForApproval, approveTask };
+export { createTask, getAllTasks, getCompanyTasks, getUserTasks, updateTask, deleteTask, getTasksForApproval, approveTask };

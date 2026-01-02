@@ -38,6 +38,11 @@ export const taskAPI = {
     return fetchAPI(`/tasks/company/${companyId}`);
   },
 
+  // Get tasks assigned to a specific user
+  getUserTasks: async (userId) => {
+    return fetchAPI(`/tasks/user/${userId}`);
+  },
+
   // Create a new task
   createTask: async (taskData) => {
     return fetchAPI('/tasks', {
