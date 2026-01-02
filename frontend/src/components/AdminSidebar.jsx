@@ -32,7 +32,7 @@ const AdminSidebar = () => {
     { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval', path: '/manager/task-approval' },
     { id: 'jobTypes', icon: 'work', label: 'Job Types', path: '/manager/job-types' },
     { id: 'payments', icon: 'credit_card', label: 'Payments', path: '/manager/payments' },
-    { id: 'settings', icon: 'settings', label: 'Settings', path: '/manager/settings' },
+    { id: 'profile', icon: 'account_circle', label: 'Profile', path: '/manager/profile' },
   ];
 
   const handleMenuClick = (path) => {
@@ -59,7 +59,7 @@ const AdminSidebar = () => {
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-2 overflow-y-auto flex-1">
           {menuItems.map((item) => (
             <button
               key={item.id}
@@ -115,15 +115,17 @@ const AdminSidebar = () => {
       {/* Sidebar */}
       <aside
         className={`
-          ${isMobile ? 'fixed' : 'relative'}
+          fixed top-0 bottom-0 left-0
           ${isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'}
-          w-64 bg-[#1e2987] text-white p-4 min-h-screen
+          w-64 bg-[#1e2987] text-white p-4
           transition-transform duration-300 ease-in-out z-40
-          ${isMobile ? 'top-0 left-0 bottom-0' : ''}
         `}
       >
         <SidebarContent />
       </aside>
+
+      {/* Spacer for desktop (push content to the right) */}
+      {!isMobile && <div className="w-64 flex-shrink-0" />}
     </>
   );
 };

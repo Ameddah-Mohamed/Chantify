@@ -23,7 +23,6 @@ import Payments from './pages/Admin/Payments'
 import PaymentDetails from './pages/Admin/PaymentDetails'
 import PaymentDetailsEnhanced from './pages/Admin/PaymentDetailsEnhanced'
 import WorkerRequests from './pages/Admin/WorkerRequests'
-import Settings from './pages/Admin/Settings'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -113,8 +112,8 @@ createRoot(document.getElementById('root')).render(
             <Route path="/manager/job-types" element={<JobTypes />} />
             <Route path="/manager/payments" element={<Payments />} />
             <Route path="/manager/payments/details/:workerId" element={<PaymentDetailsEnhanced />} />
-            <Route path="/manager/settings" element={<Settings />} />
             <Route path="/admin/projects" element={<ProjectManagementPage />} />
+            <Route path="/manager/profile" element={<Profile />} /> 
           </Route>
 
           {/* Catch all */}

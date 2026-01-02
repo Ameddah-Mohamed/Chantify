@@ -9,7 +9,7 @@ export default function WeeklyTaskPage() {
 	const { user } = useAuth();
 	const [tasks, setTasks] = useState([]);
 	const [workerTasks, setWorkerTasks] = useState({});
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(true); 
 	const [error, setError] = useState(null);
 	const navigate = useNavigate();
 	
@@ -29,7 +29,9 @@ export default function WeeklyTaskPage() {
 
 		try {
 			setLoading(true);
-			const response = await taskAPI.getAllTasks();
+			
+			// ✅ FIX: Fetch only tasks assigned to this worker
+			const response = await taskAPI.getUserTasks(currentWorkerId);
 			const tasksData = response.data || [];
 			setTasks(tasksData);
 			

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { userAPI } from '../API/userAPI';
 
-export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
+export default function UserSearchSelect({ selectedUsers = [], onUsersChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,7 +29,10 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
       const response = await userAPI.getUsers(searchTerm);
       // Handle both array and object responses
       const userList = Array.isArray(response) ? response : response.data || response.users || [];
-      setUsers(userList);
+      
+      // ✅ Filter only active workers
+      const activeWorkers = userList.filter(u => u.role === 'worker' && u.isActive);
+      setUsers(activeWorkers);
     } catch (error) {
       console.error('Error fetching users:', error);
       setUsers([]);
@@ -38,12 +41,24 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
     }
   };
 
-  const toggleUser = (userId) => {
+  // ✅ FIX: Stop event propagation to prevent double toggle
+  const toggleUser = (userId, event) => {
+    event.stopPropagation(); // ✅ IMPORTANT
+    
     if (selectedUsers.includes(userId)) {
       onUsersChange(selectedUsers.filter(id => id !== userId));
     } else {
       onUsersChange([...selectedUsers, userId]);
     }
+  };
+
+  // ✅ Select/Deselect All
+  const selectAll = () => {
+    onUsersChange(users.map(u => u._id));
+  };
+
+  const deselectAll = () => {
+    onUsersChange([]);
   };
 
   const getSelectedUserNames = () => {
@@ -55,12 +70,6 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
       return `${user.personalInfo.firstName} ${user.personalInfo.lastName} (${jobType})`;
     }
     return `${selected.length} workers selected`;
-  };
-
-  const getUserInitials = (user) => {
-    const first = user.personalInfo.firstName.charAt(0);
-    const last = user.personalInfo.lastName.charAt(0);
-    return `${first}${last}`.toUpperCase();
   };
 
   const getAvatarUrl = (user) => {
@@ -80,20 +89,20 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
             .map(user => (
               <div
                 key={user._id}
-                className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-3 py-1"
+                className="flex items-center gap-2 bg-[#f3ae3f]/10 border border-[#f3ae3f]/30 rounded-full px-3 py-1"
               >
                 <img
                   src={getAvatarUrl(user)}
                   alt={`${user.personalInfo.firstName} ${user.personalInfo.lastName}`}
                   className="w-5 h-5 rounded-full"
                 />
-                <span className="text-sm text-blue-900">
+                <span className="text-sm text-gray-900">
                   {user.personalInfo.firstName} {user.personalInfo.lastName}
                 </span>
                 <button
                   type="button"
-                  onClick={() => toggleUser(user._id)}
-                  className="text-blue-600 hover:text-blue-800"
+                  onClick={(e) => toggleUser(user._id, e)} // ✅ Pass event
+                  className="text-[#f3ae3f] hover:text-[#e09d2f] font-bold text-lg"
                 >
                   ×
                 </button>
@@ -106,7 +115,7 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-14 px-4 rounded-lg bg-gray-50 border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition flex items-center justify-between"
+        className="w-full h-14 px-4 rounded-lg bg-gray-50 border border-gray-300 focus:border-[#f3ae3f] focus:ring-2 focus:ring-[#f3ae3f]/20 outline-none transition flex items-center justify-between"
       >
         <span className={selectedUsers.length === 0 ? 'text-gray-400' : 'text-gray-900'}>
           {getSelectedUserNames()}
@@ -123,7 +132,7 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-hidden">
+        <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-hidden">
           {/* Search input */}
           <div className="p-3 border-b border-gray-200">
             <input
@@ -131,30 +140,52 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
               placeholder="Search workers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f3ae3f]/20 focus:border-[#f3ae3f] outline-none"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
 
+          {/* Select All / Deselect All */}
+          {users.length > 0 && (
+            <div className="p-3 border-b border-gray-200 flex gap-2">
+              <button
+                type="button"
+                onClick={selectAll}
+                className="flex-1 px-3 py-1.5 text-sm bg-[#f3ae3f] text-white rounded hover:bg-[#e09d2f] transition"
+              >
+                Select All ({users.length})
+              </button>
+              <button
+                type="button"
+                onClick={deselectAll}
+                className="flex-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
+              >
+                Deselect All
+              </button>
+            </div>
+          )}
+
           {/* User list */}
-          <div className="overflow-y-auto max-h-60">
+          <div className="overflow-y-auto max-h-64">
             {loading ? (
               <div className="p-4 text-center text-gray-500">Loading...</div>
             ) : users.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No workers found</div>
+              <div className="p-4 text-center text-gray-500">No active workers found</div>
             ) : (
               users.map(user => (
                 <button
                   key={user._id}
                   type="button"
-                  onClick={() => toggleUser(user._id)}
+                  onClick={(e) => toggleUser(user._id, e)} // ✅ Pass event
                   className="w-full px-4 py-3 hover:bg-gray-50 flex items-center gap-3 transition"
                 >
+                  {/* ✅ Checkbox properly controlled */}
                   <input
                     type="checkbox"
                     checked={selectedUsers.includes(user._id)}
-                    onChange={() => {}}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-200"
+                    onChange={() => {}} // ✅ Handled by onClick above
+                    onClick={(e) => e.stopPropagation()} // ✅ Prevent double toggle
+                    className="w-4 h-4 text-[#f3ae3f] rounded focus:ring-2 focus:ring-[#f3ae3f]/20 cursor-pointer"
                   />
                   <img
                     src={getAvatarUrl(user)}
@@ -167,7 +198,7 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
                     </p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                     {user.jobTypeId && (
-                      <p className="text-xs text-blue-600 font-medium">
+                      <p className="text-xs text-[#f3ae3f] font-medium">
                         {user.jobTypeId.name} • {user.jobTypeId.hourlyRate} DH/hour
                       </p>
                     )}
