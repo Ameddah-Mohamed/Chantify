@@ -14,7 +14,8 @@ export default function WeeklyTaskPage() {
 	
 	// For now, we'll use a hardcoded worker ID
 	// In a real app, this would come from user authentication context
-	const currentWorkerId = "default-worker-id";
+	// This should match a user ID from your UserSearchSelect component
+	const currentWorkerId = "675c9f8e9b5f123456789abc"; // Use a real user ID from your database
 
 	useEffect(() => {
 		fetchTasksAndStatuses();
@@ -23,7 +24,10 @@ export default function WeeklyTaskPage() {
 	const fetchTasksAndStatuses = async () => {
 		try {
 			setLoading(true);
-			const response = await taskAPI.getAllTasks();
+			console.log('Fetching tasks for user:', currentWorkerId);
+			// Fetch only tasks assigned to current user
+			const response = await taskAPI.getUserTasks(currentWorkerId);
+			console.log('User tasks response:', response);
 			const tasksData = response.data || [];
 			setTasks(tasksData);
 			

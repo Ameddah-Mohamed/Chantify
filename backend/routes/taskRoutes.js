@@ -1,5 +1,5 @@
 import express from 'express';
-import { createTask, getCompanyTasks, getAllTasks, updateTask, deleteTask, getTasksForApproval, approveTask } from '../controllers/task.controller.js';
+import { createTask, getCompanyTasks, getAllTasks, getUserTasks, updateTask, deleteTask, getTasksForApproval, approveTask } from '../controllers/task.controller.js';
 
 const router = express.Router();
 
@@ -13,6 +13,9 @@ router.route('/ready-for-approval')
 
 router.route('/company/:companyId')
   .get(getCompanyTasks);
+
+router.route('/user/:userId')
+  .get(getUserTasks);
 
 router.route('/:id')
   .get(getAllTasks)

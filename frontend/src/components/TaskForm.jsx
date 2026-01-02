@@ -52,6 +52,8 @@ export default function TaskForm() {
     setSuccess(false);
 
     try {
+      console.log('Creating task with data:', formData);
+      console.log('Assigned to users:', formData.assignedTo);
       const response = await taskAPI.createTask(formData);
       console.log('Task created:', response.data);
       setSuccess(true);

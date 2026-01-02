@@ -255,13 +255,13 @@ export const signup = async (req, res) => {
 
     // Different messages based on role
     if (finalRole === 'admin') {
-      console.log('✅ ADMIN SIGNUP COMPLETED SUCCESSFULLY ✅\n');
+      console.log('ADMIN SIGNUP COMPLETED SUCCESSFULLY \n');
       res.status(201).json({
         message: "Admin account and company created successfully!",
         ...response
       });
     } else {
-      console.log('✅ WORKER SIGNUP COMPLETED SUCCESSFULLY ✅\n');
+      console.log(' WORKER SIGNUP COMPLETED SUCCESSFULLY \n');
       res.status(201).json({
         message: "Application submitted successfully! Waiting for company approval.",
         ...response
@@ -269,7 +269,7 @@ export const signup = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('\n❌❌❌ FATAL ERROR IN SIGNUP ❌❌❌');
+    console.error('\n FATAL ERROR IN SIGNUP ');
     console.error("Error name:", error.name);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
