@@ -3,30 +3,33 @@ import { useNavigate } from "react-router-dom";
 import TaskCard from "../../components/TaskCard";
 import { taskAPI } from "../../API/taskAPI";
 import { workerTaskAPI } from "../../API/workerTaskAPI";
+import { useAuth } from "../../context/AuthContext";
 
 export default function WeeklyTaskPage() {
+	const { user } = useAuth();
 	const [tasks, setTasks] = useState([]);
 	const [workerTasks, setWorkerTasks] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const navigate = useNavigate();
 	
-	// For now, we'll use a hardcoded worker ID
-	// In a real app, this would come from user authentication context
-	// This should match a user ID from your UserSearchSelect component
-	const currentWorkerId = "675c9f8e9b5f123456789abc"; // Use a real user ID from your database
+	const currentWorkerId = user?._id;
 
 	useEffect(() => {
-		fetchTasksAndStatuses();
-	}, []);
+		if (currentWorkerId) { 
+			fetchTasksAndStatuses();
+		}
+	}, [currentWorkerId]); 
 
 	const fetchTasksAndStatuses = async () => {
+		if (!currentWorkerId) { 
+			setError('User not authenticated');
+			return;
+		}
+
 		try {
 			setLoading(true);
-			console.log('Fetching tasks for user:', currentWorkerId);
-			// Fetch only tasks assigned to current user
-			const response = await taskAPI.getUserTasks(currentWorkerId);
-			console.log('User tasks response:', response);
+			const response = await taskAPI.getAllTasks();
 			const tasksData = response.data || [];
 			setTasks(tasksData);
 			
@@ -36,7 +39,6 @@ export default function WeeklyTaskPage() {
 					const statusResponse = await workerTaskAPI.getStatus(task._id, currentWorkerId);
 					return { taskId: task._id, status: statusResponse.data?.status || 'todo' };
 				} catch (err) {
-					// If no worker task exists, default to 'todo'
 					return { taskId: task._id, status: 'todo' };
 				}
 			});
@@ -90,6 +92,16 @@ export default function WeeklyTaskPage() {
 
 	const weekDays = getWeekDays();
 
+	if (!user) {
+		return (
+			<div className="p-4 min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<p className="text-gray-600">Loading user information...</p>
+				</div>
+			</div>
+		);
+	}
+
 	if (loading) {
 		return (
 			<div className="p-4 min-h-screen bg-gray-50 flex items-center justify-center">
@@ -128,7 +140,7 @@ export default function WeeklyTaskPage() {
 					<button 
 						onClick={fetchTasksAndStatuses}
 						className="px-4 py-2 bg-[#f3ae3f] text-white rounded-lg hover:bg-[#e09d2f] transition"
-						>
+					>
 						Refresh
 					</button>
 				</div>
