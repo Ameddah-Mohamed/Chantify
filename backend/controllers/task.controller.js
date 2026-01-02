@@ -72,13 +72,6 @@ const getUserTasks = asyncHandler(async (req, res) => {
     data: tasks
   });
 });
-  
-  res.json({
-    success: true,
-    count: tasks.length,
-    data: tasks
-  });
-});
 
 // @desc    Update task
 // @route   PUT /api/tasks/:id
