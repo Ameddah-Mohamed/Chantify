@@ -84,7 +84,7 @@ createRoot(document.getElementById('root')).render(
           >
             <Route path="/manager/dashboard" element={<Dashboard />} />
             <Route path="/tasks" element={<TaskWeeklyPage />} />
-            <Route path="manager/create-task" element={<CreateTask />} />
+            <Route path="/manager/create-task" element={<CreateTask />} />
             <Route path="/manager/workers" element={<Workers />} />
             <Route path="/manager/task-approval" element={<TaskApproval />} />
             <Route path="/manager/job-types" element={<JobTypes />} />

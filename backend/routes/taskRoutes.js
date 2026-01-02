@@ -22,6 +22,9 @@ router.route('/ready-for-approval')
 router.route('/company/:companyId')
   .get(getCompanyTasks);
 
+router.route('/user/:userId')
+  .get(getUserTasks);
+
 router.route('/:id')
   .get(getAllTasks) // Note: Usually this is a 'getOneTask' function
   .put(updateTask)
