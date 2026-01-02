@@ -49,7 +49,7 @@ export const getCompanyJobTypes = async (req, res) => {
 // Create a new job type (admin only)
 export const createJobType = async (req, res) => {
   try {
-    const { name, hourlyRate, expectedHoursPerDay } = req.body;
+    const { name, hourlyRate, baseSalary, expectedHoursPerDay } = req.body;
 
     // Check admin permission
     if (req.user.role !== 'admin') {
@@ -57,7 +57,7 @@ export const createJobType = async (req, res) => {
     }
 
     // Validate required fields
-    if (!name || !hourlyRate) {
+    if (!name || hourlyRate === undefined) {
       return res.status(400).json({ error: "Name and hourly rate are required" });
     }
 
@@ -68,6 +68,10 @@ export const createJobType = async (req, res) => {
     // Validate values
     if (hourlyRate < 0) {
       return res.status(400).json({ error: "Hourly rate must be positive" });
+    }
+
+    if (baseSalary !== undefined && baseSalary < 0) {
+      return res.status(400).json({ error: "Base salary must be positive" });
     }
 
     if (expectedHoursPerDay < 0 || expectedHoursPerDay > 12) {
@@ -90,6 +94,7 @@ export const createJobType = async (req, res) => {
     const newJobType = new JobType({
       name: name.trim(),
       hourlyRate: Number(hourlyRate),
+      baseSalary: baseSalary ? Number(baseSalary) : 0,
       expectedHoursPerDay: Number(expectedHoursPerDay),
       companyId: req.user.companyId
     });
@@ -110,7 +115,7 @@ export const createJobType = async (req, res) => {
 export const updateJobType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, hourlyRate, expectedHoursPerDay, isActive } = req.body;
+    const { name, hourlyRate, baseSalary, expectedHoursPerDay, isActive } = req.body;
 
     // Check admin permission
     if (req.user.role !== 'admin') {
@@ -122,6 +127,11 @@ export const updateJobType = async (req, res) => {
       return res.status(400).json({ error: "Hourly rate must be positive" });
     }
 
+    // Validate base salary if provided
+    if (baseSalary !== undefined && baseSalary < 0) {
+      return res.status(400).json({ error: "Base salary must be positive" });
+    }
+
     // Validate expected hours if provided
     if (expectedHoursPerDay !== undefined && (expectedHoursPerDay < 0 || expectedHoursPerDay > 12)) {
       return res.status(400).json({ error: "Expected hours per day must be between 0 and 12" });
@@ -131,6 +141,7 @@ export const updateJobType = async (req, res) => {
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
     if (hourlyRate !== undefined) updateData.hourlyRate = Number(hourlyRate);
+    if (baseSalary !== undefined) updateData.baseSalary = Number(baseSalary);
     if (expectedHoursPerDay !== undefined) updateData.expectedHoursPerDay = Number(expectedHoursPerDay);
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
 

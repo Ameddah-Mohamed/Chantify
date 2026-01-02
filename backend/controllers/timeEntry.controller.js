@@ -1,6 +1,8 @@
 // backend/controllers/timeEntry.controller.js
 import TimeEntry from '../models/timeEntry.model.js';
+import MonthlySummary from '../models/monthlySummary.model.js';
 import User from '../models/user.model.js';
+import Company from '../models/company.model.js';
 
 // Clock In
 export const clockIn = async (req, res) => {
@@ -8,10 +10,10 @@ export const clockIn = async (req, res) => {
     const { userId, latitude, longitude, address } = req.body;
 
     // Validate required fields
-    if (!userId || !latitude || !longitude) {
+    if (!userId || (latitude === undefined || latitude === null) || (longitude === undefined || longitude === null)) {
       return res.status(400).json({
         success: false,
-        error: 'User ID and location are required'
+        error: 'User ID and location (latitude, longitude) are required'
       });
     }
 
@@ -29,8 +31,28 @@ export const clockIn = async (req, res) => {
     if (activeSession) {
       return res.status(400).json({
         success: false,
-        error: 'You already have an active clock-in session',
+        error: 'You already have an active clock-in session. Please clock out first.',
         data: activeSession
+      });
+    }
+
+    // Check if user already clocked in today (once-per-day constraint)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayEntry = await TimeEntry.findOne({
+      userId,
+      workDate: {
+        $gte: today,
+        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+      }
+    });
+
+    if (todayEntry) {
+      return res.status(400).json({
+        success: false,
+        error: 'Already clocked in today.',
+        data: todayEntry
       });
     }
 
@@ -38,31 +60,42 @@ export const clockIn = async (req, res) => {
     const workDate = new Date();
     workDate.setHours(0, 0, 0, 0);
 
-    // Create new time entry
+    // Create new time entry with proper location validation
     const timeEntry = await TimeEntry.create({
       userId,
       companyId: user.companyId,
       clockInTime: new Date(),
       clockInLocation: {
-        latitude,
-        longitude,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
         address: address || ''
       },
       workDate,
       status: 'active'
     });
 
+    // Get company location info
+    const company = await Company.findById(user.companyId);
+
     res.status(201).json({
       success: true,
       message: 'Clocked in successfully',
-      data: timeEntry
+      data: {
+        _id: timeEntry._id,
+        userId: timeEntry.userId,
+        clockInTime: timeEntry.clockInTime,
+        clockInLocation: timeEntry.clockInLocation,
+        workDate: timeEntry.workDate,
+        status: timeEntry.status,
+        companyLocation: company?.location || null
+      }
     });
 
   } catch (error) {
     console.error('Clock in error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to clock in'
+      error: 'Failed to clock in: ' + (error.message || 'Unknown error')
     });
   }
 };
@@ -73,10 +106,10 @@ export const clockOut = async (req, res) => {
     const { userId, latitude, longitude, address, notes } = req.body;
 
     // Validate required fields
-    if (!userId || !latitude || !longitude) {
+    if (!userId || (latitude === undefined || latitude === null) || (longitude === undefined || longitude === null)) {
       return res.status(400).json({
         success: false,
-        error: 'User ID and location are required'
+        error: 'User ID and location (latitude, longitude) are required'
       });
     }
 
@@ -92,8 +125,8 @@ export const clockOut = async (req, res) => {
     // Update the session
     activeSession.clockOutTime = new Date();
     activeSession.clockOutLocation = {
-      latitude,
-      longitude,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
       address: address || ''
     };
     activeSession.status = 'completed';
@@ -106,20 +139,45 @@ export const clockOut = async (req, res) => {
     
     await activeSession.save();
 
+    // ATOMIC UPDATE: Update MonthlySummary with the new hours
+    // This ensures the monthly total is never calculated incorrectly
+    const workYear = activeSession.workDate.getFullYear();
+    const workMonth = activeSession.workDate.getMonth() + 1;
+    
+    await MonthlySummary.addHours(
+      userId,
+      activeSession.companyId,
+      workYear,
+      workMonth,
+      activeSession.totalHours,
+      activeSession.workDate
+    );
+
     res.status(200).json({
       success: true,
       message: 'Clocked out successfully',
-      data: activeSession
+      data: {
+        _id: activeSession._id,
+        userId: activeSession.userId,
+        clockInTime: activeSession.clockInTime,
+        clockOutTime: activeSession.clockOutTime,
+        clockInLocation: activeSession.clockInLocation,
+        clockOutLocation: activeSession.clockOutLocation,
+        totalHours: activeSession.totalHours,
+        workDate: activeSession.workDate,
+        status: activeSession.status
+      }
     });
 
   } catch (error) {
     console.error('Clock out error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to clock out'
+      error: 'Failed to clock out: ' + (error.message || 'Unknown error')
     });
   }
 };
+
 
 // Get active session for a user
 export const getActiveSession = async (req, res) => {
@@ -260,6 +318,58 @@ export const getCompanyTimeEntries = async (req, res) => {
   }
 };
 
+// Get daily time entries for a user
+export const getDailyEntries = async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+
+    // Parse the date (format: YYYY-MM-DD)
+    const targetDate = new Date(date);
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid date format. Use YYYY-MM-DD'
+      });
+    }
+
+    // Set time to start of day for consistent queries
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const timeEntries = await TimeEntry.find({
+      userId,
+      workDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    }).sort({ clockInTime: 1 });
+
+    // Calculate total hours
+    const totalHours = timeEntries
+      .filter(entry => entry.status === 'completed')
+      .reduce((sum, entry) => sum + entry.totalHours, 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        date: date,
+        sessions: timeEntries,
+        totalHours: parseFloat(totalHours.toFixed(2))
+      }
+    });
+
+  } catch (error) {
+    console.error('Get daily entries error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get daily entries'
+    });
+  }
+};
+
 // Get monthly report for a user
 export const getMonthlyReport = async (req, res) => {
   try {
@@ -330,6 +440,112 @@ export const getMonthlyReport = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get monthly report'
+    });
+  }
+};
+
+// Get all monthly summaries for a user
+export const getUserMonthlySummaries = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const summaries = await MonthlySummary.find({ userId })
+      .sort({ year: -1, month: -1 })
+      .select('month year monthKey totalMonthlyHours workDaysCount lastUpdated');
+
+    res.status(200).json({
+      success: true,
+      data: summaries
+    });
+
+  } catch (error) {
+    console.error('Get monthly summaries error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get monthly summaries'
+    });
+  }
+};
+
+// Get session history for a user (for admin view)
+export const getSessionHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 50, skip = 0, startDate, endDate } = req.query;
+
+    const query = { userId, status: 'completed' };
+
+    if (startDate || endDate) {
+      query.workDate = {};
+      if (startDate) {
+        query.workDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.workDate.$lte = end;
+      }
+    }
+
+    const sessions = await TimeEntry.find(query)
+      .sort({ clockInTime: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .select('workDate clockInTime clockOutTime totalHours clockInLocation status');
+
+    const total = await TimeEntry.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: sessions,
+      pagination: {
+        total,
+        limit: parseInt(limit),
+        skip: parseInt(skip)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get session history error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get session history'
+    });
+  }
+};
+
+// Force clear active session for a user (Admin only - for testing/emergencies)
+export const forceClockOut = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find and remove any active sessions
+    const result = await TimeEntry.deleteMany({
+      userId,
+      status: 'active'
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No active session found to clear'
+      });
+    }
+
+    // Also clear localStorage hint on client
+    res.status(200).json({
+      success: true,
+      message: `Cleared ${result.deletedCount} active session(s)`,
+      data: {
+        clearedCount: result.deletedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('Force clock out error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear active session'
     });
   }
 };

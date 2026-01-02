@@ -44,11 +44,24 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     setUser(userData);
-    // Redirect based on role
+    // Redirect based on role and applicationStatus
     if (userData.role === 'admin') {
       navigate('/manager/dashboard');
+    } else if (userData.role === 'worker') {
+      // Check application status for workers
+      if (userData.applicationStatus === 'pending') {
+        navigate('/pending-approval');
+      } else if (userData.applicationStatus === 'approved') {
+        navigate('/worker/weekly');
+      } else if (userData.applicationStatus === 'rejected') {
+        // Rejected users cannot access the app
+        navigate('/signin');
+      } else {
+        // Default to pending if not set
+        navigate('/pending-approval');
+      }
     } else {
-      navigate('/tasks');
+      navigate('/');
     }
   };
 

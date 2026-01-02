@@ -1,6 +1,9 @@
+// frontend/src/pages/Admin/Workers.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Workers = () => {
+  const navigate = useNavigate();
   const [workers, setWorkers] = useState([]);
   const [pendingApplications, setPendingApplications] = useState([]);
   const [jobTypes, setJobTypes] = useState([]);
@@ -244,8 +247,11 @@ const Workers = () => {
                     </tr>
                   ) : (
                     filteredWorkers.map((worker) => (
-                      <tr key={worker._id} className="border-t border-[#e6e2db] hover:bg-[#f8f7f5]">
-                        <td className="px-6 py-4 text-[#181511] text-sm font-medium">
+                      <tr key={worker._id} className="border-t border-[#e6e2db] hover:bg-[#f8f7f5] cursor-pointer">
+                        <td 
+                          onClick={() => navigate(`/manager/workers/${worker._id}`)}
+                          className="px-6 py-4 text-[#181511] text-sm font-medium hover:text-[#1e2987]"
+                        >
                           {worker.personalInfo?.firstName} {worker.personalInfo?.lastName}
                         </td>
                         <td className="px-6 py-4 text-[#8a7a60] text-sm">{worker.email}</td>
@@ -273,7 +279,19 @@ const Workers = () => {
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <button 
-                              onClick={() => handleToggleStatus(worker._id, worker.isActive)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/manager/workers/${worker._id}`);
+                              }}
+                              className="px-3 py-1.5 rounded-lg hover:bg-blue-500/10 text-blue-600 text-sm font-medium transition-colors"
+                            >
+                              View Profile
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleStatus(worker._id, worker.isActive);
+                              }}
                               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                 worker.isActive
                                   ? 'hover:bg-gray-500/10 text-gray-600'
@@ -283,7 +301,8 @@ const Workers = () => {
                               {worker.isActive ? 'Deactivate' : 'Activate'}
                             </button>
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setWorkerToDelete(worker);
                                 setShowDeleteModal(true);
                               }}
@@ -308,7 +327,11 @@ const Workers = () => {
                 </div>
               ) : (
                 filteredWorkers.map((worker) => (
-                  <div key={worker._id} className="bg-white rounded-lg border border-[#e6e2db] p-4">
+                  <div 
+                    key={worker._id} 
+                    className="bg-white rounded-lg border border-[#e6e2db] p-4"
+                    onClick={() => navigate(`/manager/workers/${worker._id}`)}
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="text-lg font-semibold text-[#181511]">
@@ -343,7 +366,7 @@ const Workers = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => handleToggleStatus(worker._id, worker.isActive)}
                         className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${

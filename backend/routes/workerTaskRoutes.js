@@ -1,8 +1,9 @@
 import express from 'express';
 import {
-  updateWorkerTaskStatus,
+   updateWorkerTaskStatus,
   getWorkerTaskStatus,
   getTaskWorkerStatuses,
+  getWorkerTasks,
   uploadWorkerTaskFile,
   cleanupInvalidWorkerTasks
 } from '../controllers/workerTask.controller.js';
@@ -29,9 +30,15 @@ router.get('/:taskId/all', getTaskWorkerStatuses);
 // @access  Public
 router.post('/:taskId/:workerId/upload', uploadWorkerTaskFile);
 
+
+router.get('/worker/:workerId', getWorkerTasks);
+router.get('/:taskId', getTaskWorkerStatuses);
+
 // @route   DELETE /api/worker-tasks/cleanup
 // @desc    Clean up invalid worker tasks
 // @access  Admin
 router.delete('/cleanup', cleanupInvalidWorkerTasks);
+
+
 
 export default router;

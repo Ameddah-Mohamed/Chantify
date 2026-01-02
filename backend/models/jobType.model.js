@@ -12,6 +12,12 @@ const jobTypeSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  baseSalary: {
+    type: Number,
+    default: 0,
+    min: 0,
+    description: 'Base salary for this job type'
+  },
   expectedHoursPerDay: {  // ← Valeur par défaut pour ce job type
     type: Number,
     default: 8,

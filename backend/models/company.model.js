@@ -30,6 +30,23 @@ const companySchema = new mongoose.Schema({
       }
     }
   },
+
+  // Company Location for Clock In/Out
+  location: {
+    latitude: {
+      type: Number,
+      default: null
+    },
+    longitude: {
+      type: Number,
+      default: null
+    },
+    radius: {
+      type: Number,
+      default: 500, // Default 500 meters
+      description: 'Radius in meters for location validation'
+    }
+  },
   
   // Company Settings
   settings: {

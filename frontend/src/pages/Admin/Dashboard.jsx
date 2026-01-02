@@ -55,7 +55,7 @@ const Dashboard = () => {
   const COLORS = ['#1e2987', '#f3ae3f', '#82ca9d', '#8884d8'];
 
   return (
-    <div className="flex-1 p-4 md:p-8 bg-[#f8f7f5] overflow-y-auto">
+    <div className="flex-1 pt-20 md:pt-8 p-4 md:p-8 bg-[#f8f7f5] overflow-y-auto">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">

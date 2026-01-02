@@ -37,7 +37,7 @@ export const paymentAPI = {
 
   // Get payment details
   getPaymentDetails: async (userId, year, month) => {
-    return fetchAPI(`/payments/details/${userId}/${year}/${month}`);
+    return fetchAPI(`/payments/${userId}/${year}/${month}`);
   },
 
   // Update payment (bonus, penalties, notes)
@@ -50,7 +50,7 @@ export const paymentAPI = {
 
   // Toggle payment status
   togglePaymentStatus: async (paymentId) => {
-    return fetchAPI(`/payments/${paymentId}/status`, {
+    return fetchAPI(`/payments/${paymentId}/toggle-status`, {
       method: 'PATCH',
     });
   },

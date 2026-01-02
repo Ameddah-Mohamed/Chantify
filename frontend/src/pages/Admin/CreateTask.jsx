@@ -3,7 +3,7 @@ import TaskForm from '../../components/TaskForm';
 
 const CreateTask = () => {
   return (
-    <div className="flex-1 p-6">
+    <div className="flex-1 pt-20 md:pt-8 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">

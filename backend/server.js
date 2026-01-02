@@ -33,7 +33,7 @@ app.use(express.json());
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
-app.use("/api/users", simpleUserRoutes); // Changed to use simpleUserRoutes for workers
+app.use("/api/users", userRoutes);
 app.use("/api/jobtypes", jobTypeRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/worker-tasks', workerTaskRoutes);

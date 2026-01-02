@@ -7,6 +7,7 @@ const fetchAPI = async (endpoint, options = {}) => {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+    credentials: 'include',
     ...options,
   });
 
@@ -23,7 +24,7 @@ export const userAPI = {
   // Get all users with optional search
   getUsers: async (searchTerm = '') => {
     const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : '';
-    return fetchAPI(`/users${query}`);
+    return fetchAPI(`/users/company/workers${query}`);
   },
 };
 

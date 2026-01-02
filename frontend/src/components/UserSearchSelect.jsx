@@ -27,9 +27,12 @@ export default function UserSearchSelect({ selectedUsers, onUsersChange }) {
     try {
       setLoading(true);
       const response = await userAPI.getUsers(searchTerm);
-      setUsers(response.data || []);
+      // Handle both array and object responses
+      const userList = Array.isArray(response) ? response : response.data || response.users || [];
+      setUsers(userList);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
