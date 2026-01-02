@@ -7,7 +7,7 @@ const taskSchema = new mongoose.Schema({
     required: false
   },
   assignedTo: [{
-    type: String,  // Using String for mock users, change to ObjectId when using real User model
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
   assignedBy: {

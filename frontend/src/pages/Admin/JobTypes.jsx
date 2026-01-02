@@ -10,6 +10,7 @@ const JobTypes = () => {
   const [formData, setFormData] = useState({
     name: '',
     hourlyRate: '',
+    baseSalary: '',
     expectedHoursPerDay: 8
   });
 
@@ -35,8 +36,8 @@ const JobTypes = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.hourlyRate || !formData.expectedHoursPerDay) {
-      alert('Please fill in all fields');
+    if (!formData.name || formData.hourlyRate === '' || !formData.expectedHoursPerDay) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -45,12 +46,14 @@ const JobTypes = () => {
         await jobTypeAPI.updateJobType(editingJobType._id, {
           name: formData.name,
           hourlyRate: Number(formData.hourlyRate),
+          baseSalary: formData.baseSalary ? Number(formData.baseSalary) : 0,
           expectedHoursPerDay: Number(formData.expectedHoursPerDay)
         });
       } else {
         await jobTypeAPI.createJobType({
           name: formData.name,
           hourlyRate: Number(formData.hourlyRate),
+          baseSalary: formData.baseSalary ? Number(formData.baseSalary) : 0,
           expectedHoursPerDay: Number(formData.expectedHoursPerDay)
         });
       }
@@ -82,6 +85,7 @@ const JobTypes = () => {
     setFormData({
       name: jobType.name,
       hourlyRate: jobType.hourlyRate,
+      baseSalary: jobType.baseSalary || '',
       expectedHoursPerDay: jobType.expectedHoursPerDay || 8
     });
     setShowModal(true);
@@ -93,6 +97,7 @@ const JobTypes = () => {
     setFormData({
       name: '',
       hourlyRate: '',
+      baseSalary: '',
       expectedHoursPerDay: 8
     });
   };
@@ -138,6 +143,7 @@ const JobTypes = () => {
               <tr className="bg-white">
                 <th className="px-6 py-4 text-left text-[#8a7a60] text-sm font-medium">Job Type Name</th>
                 <th className="px-6 py-4 text-left text-[#8a7a60] text-sm font-medium">Hourly Rate</th>
+                <th className="px-6 py-4 text-left text-[#8a7a60] text-sm font-medium">Base Salary</th>
                 <th className="px-6 py-4 text-left text-[#8a7a60] text-sm font-medium">Expected Hours/Day</th>
                 <th className="px-6 py-4 text-left text-[#8a7a60] text-sm font-medium">Status</th>
                 <th className="px-6 py-4 text-left text-[#8a7a60] text-sm font-medium">Actions</th>
@@ -155,6 +161,7 @@ const JobTypes = () => {
                   <tr key={jobType._id} className="border-t border-[#e6e2db] hover:bg-[#f8f7f5]">
                     <td className="px-6 py-4 text-[#181511] text-sm font-medium">{jobType.name}</td>
                     <td className="px-6 py-4 text-[#8a7a60] text-sm">{jobType.hourlyRate.toFixed(2)} DZD/hr</td>
+                    <td className="px-6 py-4 text-[#8a7a60] text-sm">{jobType.baseSalary ? jobType.baseSalary.toFixed(2) + ' DZD' : '-'}</td>
                     <td className="px-6 py-4 text-[#8a7a60] text-sm">{jobType.expectedHoursPerDay || 8} hours</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -212,6 +219,10 @@ const JobTypes = () => {
                   <div className="flex justify-between">
                     <span className="text-[#8a7a60] text-sm">Hourly Rate:</span>
                     <span className="text-[#181511] font-medium">{jobType.hourlyRate.toFixed(2)} DZD/hr</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#8a7a60] text-sm">Base Salary:</span>
+                    <span className="text-[#181511] font-medium">{jobType.baseSalary ? jobType.baseSalary.toFixed(2) + ' DZD' : '-'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8a7a60] text-sm">Expected Hours/Day:</span>
@@ -273,6 +284,21 @@ const JobTypes = () => {
                     min="0"
                     step="0.01"
                     placeholder="e.g., 800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#181511] mb-2">
+                    Base Salary (DZD) <span className="text-[#8a7a60] text-xs">(Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.baseSalary}
+                    onChange={(e) => setFormData({...formData, baseSalary: e.target.value})}
+                    className="w-full px-4 py-2 border border-[#e6e2db] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e2987]"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g., 25000"
                   />
                 </div>
 

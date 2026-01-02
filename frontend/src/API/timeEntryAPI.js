@@ -7,6 +7,7 @@ const fetchAPI = async (endpoint, options = {}) => {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+    credentials: 'include', // Always include credentials for auth
     ...options,
   });
 
@@ -67,6 +68,21 @@ export const timeEntryAPI = {
   // Get monthly report
   getMonthlyReport: async (userId, year, month) => {
     return fetchAPI(`/time-entries/monthly/${userId}?year=${year}&month=${month}`);
+  },
+
+  // Get daily entries
+  getDailyEntries: async (userId, date) => {
+    return fetchAPI(`/time-entries/daily/${userId}/${date}`);
+  },
+
+  // Get monthly summaries for user
+  getMonthlySummaries: async (userId) => {
+    return fetchAPI(`/time-entries/summaries/${userId}`);
+  },
+
+  // Get session history for user (admin view)
+  getSessionHistory: async (userId, limit = 50, skip = 0) => {
+    return fetchAPI(`/time-entries/history/${userId}?limit=${limit}&skip=${skip}`);
   }
 };
 

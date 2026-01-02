@@ -1,9 +1,10 @@
 // src/components/ProtectedRoute.jsx
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole, requireApproved = false, allowPending = false }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -24,7 +25,32 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     if (user.role === 'admin') {
       return <Navigate to="/manager/dashboard" replace />;
     } else {
-      return <Navigate to="/tasks" replace />;
+      return <Navigate to="/pending-approval" replace />;
+    }
+  }
+
+  // Allow pending users to access /pending-approval page
+  if (location.pathname === '/pending-approval' && allowPending) {
+    return children;
+  }
+
+  // For worker routes, check if user is approved (unless specifically allowed pending)
+  if (user.role === 'worker' && requireApproved) {
+    if (user.applicationStatus === 'pending') {
+      return <Navigate to="/pending-approval" replace />;
+    }
+    if (user.applicationStatus === 'rejected') {
+      return <Navigate to="/signin" replace />;
+    }
+  }
+
+  // For worker routes without requireApproved flag, still block pending users from functional pages
+  if (user.role === 'worker' && requiredRole === 'worker' && !allowPending) {
+    if (user.applicationStatus === 'pending') {
+      return <Navigate to="/pending-approval" replace />;
+    }
+    if (user.applicationStatus === 'rejected') {
+      return <Navigate to="/signin" replace />;
     }
   }
 

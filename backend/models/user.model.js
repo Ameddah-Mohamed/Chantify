@@ -52,10 +52,36 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   
+  // Payment Information
   hourlyRate: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
+    description: 'Can override job type hourly rate'
+  },
+  
+  baseSalary: {
+    type: Number,
+    default: 0,
+    min: 0,
+    description: 'Can override job type base salary'
+  },
+
+  // Payment Overrides & Working Schedule
+  expectedHoursPerDay: {
+    type: Number,
+    default: null,
+    min: 0,
+    max: 12,
+    description: 'Override for expected hours per day (inherits from JobType if null)'
+  },
+
+  workingDaysPerMonth: {
+    type: Number,
+    default: 22,
+    min: 1,
+    max: 31,
+    description: 'Number of working days per month for payment calculation'
   },
   
   // Role & Status
@@ -80,6 +106,7 @@ const userSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
+  
   // Account Status
   isActive: {
     type: Boolean,
@@ -98,9 +125,9 @@ const userSchema = new mongoose.Schema({
   },
   
   jobType: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'JobType',
-  default: null
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'JobType',
+    default: null
   },
   
   // When admin approves/rejects
@@ -112,7 +139,6 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
 
 // Method to get full name
 userSchema.virtual('fullName').get(function() {

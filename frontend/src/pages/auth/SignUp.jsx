@@ -98,22 +98,12 @@ const SignUp = () => {
       if (data.role === 'admin') {
         login(data);
       } 
-      // ✅ SI WORKER : Afficher message de succès et rester sur la page
+      // ✅ SI WORKER : Rediriger vers page d'attente d'approbation
       else {
-        setSuccess('Account created successfully! Your application is pending approval from the administrator. You will receive an email once approved.');
-        // Réinitialiser le formulaire
-        setFormData({
-          email: '',
-          password: '',
-          firstName: '',
-          lastName: '',
-          phone: '',
-          role: 'worker',
-          companyName: '',
-          companyEmail: '',
-          jobTypeId: ''
+        login({
+          ...data,
+          applicationStatus: 'pending'
         });
-        setJobTypes([]);
       }
 
     } catch (err) {

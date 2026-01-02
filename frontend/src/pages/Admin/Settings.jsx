@@ -21,7 +21,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="flex-1 p-8 bg-white overflow-y-auto">
+    <div className="flex-1 pt-20 md:pt-8 p-8 bg-white overflow-y-auto">
       <div className="max-w-4xl mx-auto">
         {/* Page Header */}
         <div className="mb-8">

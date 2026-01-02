@@ -1,7 +1,9 @@
+// backend/controllers/workerTask.controller.js
 import WorkerTask from '../models/workerTask.model.js';
 import Task from '../models/task.model.js';
 import User from '../models/user.model.js';
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 
 // @desc    Update worker task status
 // @route   PUT /api/worker-tasks/:taskId/:workerId/status
@@ -171,7 +173,8 @@ const getWorkerTaskStatus = asyncHandler(async (req, res) => {
         workerId,
         status: 'todo',
         startedAt: null,
-        completedAt: null
+        completedAt: null,
+        files: []
       }
     });
   }
@@ -197,6 +200,23 @@ const getTaskWorkerStatuses = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get all tasks for a specific worker
+// @route   GET /api/worker-tasks/worker/:workerId
+// @access  Admin
+const getWorkerTasks = asyncHandler(async (req, res) => {
+  const { workerId } = req.params;
+  
+  const workerTasks = await WorkerTask.find({ workerId })
+    .populate('taskId', 'title description project location dueDate status')
+    .sort({ createdAt: -1 });
+  
+  res.json({
+    success: true,
+    count: workerTasks.length,
+    data: workerTasks
+  });
+});
+
 // @desc    Upload file for worker task
 // @route   POST /api/worker-tasks/:taskId/:workerId/upload
 // @access  Public
@@ -212,7 +232,8 @@ const uploadWorkerTaskFile = asyncHandler(async (req, res) => {
     workerTask = new WorkerTask({
       taskId,
       workerId,
-      status: 'todo'
+      status: 'todo',
+      files: []
     });
   }
   
@@ -271,6 +292,7 @@ export {
   updateWorkerTaskStatus,
   getWorkerTaskStatus,
   getTaskWorkerStatuses,
+  getWorkerTasks,
   uploadWorkerTaskFile,
   cleanupInvalidWorkerTasks
 };

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Building2 } from 'lucide-react';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const AdminSidebar = () => {
 
   const menuItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard', path: '/manager/dashboard' },
+    { id: 'workerRequests', icon: 'pending_actions', label: 'Worker Requests', path: '/manager/worker-requests' },
     { id: 'createTask', icon: 'add_task', label: 'Create Task', path: '/manager/create-task' }, 
     { id: 'workers', icon: 'group', label: 'Workers', path: '/manager/workers' },
     { id: 'taskApproval', icon: 'task_alt', label: 'Task Approval', path: '/manager/task-approval' },
@@ -48,9 +50,7 @@ const AdminSidebar = () => {
         {/* Logo Section */}
         <div className="flex items-center gap-3 px-2">
           <div className="flex items-center justify-center w-10 h-10 bg-[#f3ae3f] rounded-full">
-            <svg fill="none" viewBox="0 0 48 48" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
-            </svg>
+            <Building2 className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col">
             <h1 className="text-white text-lg font-bold">CHANTIFY</h1>

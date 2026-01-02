@@ -4,6 +4,7 @@ import {
   getCompanyPayments,
   generateMonthlyPayments,
   getPaymentDetails,
+  getWorkerPayments,
   updatePayment,
   togglePaymentStatus,
   getMyPayments
@@ -12,19 +13,15 @@ import { protectRoute } from '../middleware/protectRoute.js';
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(protectRoute);
-
 // Admin routes
-router.get('/company', getCompanyPayments);
-router.post('/generate', generateMonthlyPayments);
-router.get('/details/:userId/:year/:month', getPaymentDetails);
-router.put('/:paymentId', updatePayment);
-router.patch('/:paymentId/status', togglePaymentStatus);
+router.get('/company', protectRoute, getCompanyPayments);
+router.post('/generate', protectRoute, generateMonthlyPayments);
+router.get('/worker/:workerId', protectRoute, getWorkerPayments);
+router.get('/:userId/:year/:month', protectRoute, getPaymentDetails);
+router.put('/:paymentId', protectRoute, updatePayment);
+router.patch('/:paymentId/toggle-status', protectRoute, togglePaymentStatus);
 
 // Worker routes
-router.get('/my-payments', getMyPayments);
+router.get('/my-payments', protectRoute, getMyPayments);
 
 export default router;
-
-

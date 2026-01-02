@@ -1,5 +1,6 @@
 // backend/controllers/payment.controller.js
 import Payment from '../models/payment.model.js';
+import MonthlySummary from '../models/monthlySummary.model.js';
 import User from '../models/user.model.js';
 import TimeEntry from '../models/timeEntry.model.js';
 
@@ -22,7 +23,7 @@ export const getCompanyPayments = async (req, res) => {
     if (status) query.status = status;
 
     const payments = await Payment.find(query)
-      .populate('userId', 'personalInfo email hourlyRate jobTypeId')
+      .populate('userId', 'personalInfo email hourlyRate jobTypeId baseSalary')
       .populate({
         path: 'userId',
         populate: {
@@ -86,14 +87,65 @@ export const generateMonthlyPayments = async (req, res) => {
       companyId: req.user.companyId,
       role: 'worker',
       isActive: true
-    });
+    }).populate('jobTypeId');
 
     const generatedPayments = [];
     const errors = [];
 
     for (const worker of workers) {
       try {
-        const payment = await Payment.getOrCreatePayment(worker._id, year, month);
+        // Check if payment already exists
+        let payment = await Payment.findOne({
+          userId: worker._id,
+          year: parseInt(year),
+          month: parseInt(month)
+        });
+
+        if (!payment) {
+          // Get actual hours from MonthlySummary (which is updated atomically on clock-out)
+          const monthlySummary = await MonthlySummary.findOne({
+            userId: worker._id,
+            month: parseInt(month),
+            year: parseInt(year)
+          });
+          
+          const actualHours = monthlySummary?.totalMonthlyHours || 0;
+          
+          // Get worker's payment parameters with fallback to Job Type defaults
+          const workingDaysPerMonth = worker.workingDaysPerMonth || 22;
+          const expectedHoursPerDay = worker.expectedHoursPerDay !== null && worker.expectedHoursPerDay !== undefined
+            ? worker.expectedHoursPerDay
+            : (worker.jobTypeId?.expectedHoursPerDay || 8);
+          
+          // Calculate estimated hours: workingDaysPerMonth × expectedHoursPerDay
+          const estimatedHours = workingDaysPerMonth * expectedHoursPerDay;
+          
+          // Get payment values with fallback to Job Type defaults
+          const hourlyRate = worker.hourlyRate || (worker.jobTypeId?.hourlyRate || 0);
+          const baseSalary = worker.baseSalary || (worker.jobTypeId?.baseSalary || 0);
+          
+          // Calculate final amount using the formula:
+          // TotalPay = (hourlyRate × estimatedHours) + baseSalary + Bonus - Penalties
+          const hoursBasedPay = hourlyRate * estimatedHours;
+          const totalPayBeforeAdjustments = hoursBasedPay + baseSalary;
+          
+          payment = await Payment.create({
+            userId: worker._id,
+            companyId: worker.companyId,
+            month: parseInt(month),
+            year: parseInt(year),
+            estimatedHours,
+            actualHours,
+            totalHours: actualHours, // Keep for backward compatibility
+            hourlyRate,
+            baseSalary,
+            bonus: 0,
+            penalties: 0,
+            finalAmount: totalPayBeforeAdjustments,
+            status: 'unpaid'
+          });
+        }
+        
         generatedPayments.push(payment);
       } catch (error) {
         errors.push({
@@ -138,7 +190,7 @@ export const getPaymentDetails = async (req, res) => {
       year: parseInt(year),
       month: parseInt(month)
     })
-      .populate('userId', 'personalInfo email hourlyRate jobTypeId')
+      .populate('userId', 'personalInfo email hourlyRate jobTypeId baseSalary')
       .populate({
         path: 'userId',
         populate: {
@@ -197,6 +249,48 @@ export const getPaymentDetails = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get payment details'
+    });
+  }
+};
+
+// Get all payments for a specific worker (Admin only)
+export const getWorkerPayments = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Only admin can view worker payments'
+      });
+    }
+
+    const { workerId } = req.params;
+
+    const worker = await User.findById(workerId)
+      .select('personalInfo email hourlyRate jobTypeId baseSalary')
+      .populate('jobTypeId', 'name');
+
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        error: 'Worker not found'
+      });
+    }
+
+    const payments = await Payment.find({ userId: workerId })
+      .populate('userId', 'personalInfo email hourlyRate baseSalary')
+      .sort({ year: -1, month: -1 });
+
+    res.status(200).json({
+      success: true,
+      worker,
+      payments
+    });
+
+  } catch (error) {
+    console.error('Get worker payments error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get worker payments'
     });
   }
 };

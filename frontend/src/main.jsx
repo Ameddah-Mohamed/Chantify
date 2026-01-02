@@ -5,7 +5,9 @@ import './index.css'
 import App from './App.jsx'
 import SignUp from './pages/auth/SignUp.jsx'
 import SignIn from './pages/auth/SignIn.jsx'
+import PendingApproval from './pages/auth/PendingApproval.jsx'
 import Profile from './pages/Profile.jsx'
+import PaymentWithHours from './pages/worker/PaymentWithHours.jsx'
 import WorkerLayout from './components/WorkerLayout.jsx'  
 import AdminLayout from './components/AdminLayout.jsx'    
 import WeeklyWorkerPage from './pages/worker/WeeklyTaskPage.jsx'
@@ -14,10 +16,13 @@ import TaskDetailsPage from './pages/Task/TaskDetailsPage.jsx'
 import ProjectManagementPage from './pages/Admin/projects_Management.jsx'
 import Dashboard from './pages/Admin/Dashboard'
 import Workers from './pages/Admin/Workers'
+import WorkerProfile from './pages/Admin/WorkerProfile'
 import TaskApproval from './pages/Admin/TaskApproval'
 import JobTypes from './pages/Admin/JobTypes'
 import Payments from './pages/Admin/Payments'
 import PaymentDetails from './pages/Admin/PaymentDetails'
+import PaymentDetailsEnhanced from './pages/Admin/PaymentDetailsEnhanced'
+import WorkerRequests from './pages/Admin/WorkerRequests'
 import Settings from './pages/Admin/Settings'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
@@ -48,6 +53,14 @@ createRoot(document.getElementById('root')).render(
             } 
           />
           <Route 
+            path="/pending-approval" 
+            element={
+              <ProtectedRoute requiredRole="worker" allowPending={true}>
+                <PendingApproval />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/" 
             element={
               <PublicRoute>
@@ -60,8 +73,16 @@ createRoot(document.getElementById('root')).render(
           {/* WORKER ROUTES (avec Navbar)              */}
           {/* ========================================= */}
           <Route 
+            path="/worker/payment-hours"
             element={
-              <ProtectedRoute requiredRole="worker">
+              <ProtectedRoute requiredRole="worker" requireApproved={true}>
+                <PaymentWithHours />
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            element={
+              <ProtectedRoute requiredRole="worker" requireApproved={true}>
                 <WorkerLayout />
               </ProtectedRoute>
             }
@@ -83,13 +104,15 @@ createRoot(document.getElementById('root')).render(
             }
           >
             <Route path="/manager/dashboard" element={<Dashboard />} />
+            <Route path="/manager/worker-requests" element={<WorkerRequests />} />
             <Route path="/tasks" element={<TaskWeeklyPage />} />
             <Route path="manager/create-task" element={<CreateTask />} />
             <Route path="/manager/workers" element={<Workers />} />
+            <Route path="/manager/workers/:workerId" element={<WorkerProfile />} />
             <Route path="/manager/task-approval" element={<TaskApproval />} />
             <Route path="/manager/job-types" element={<JobTypes />} />
             <Route path="/manager/payments" element={<Payments />} />
-            <Route path="/manager/payments/:workerId" element={<PaymentDetails />} />
+            <Route path="/manager/payments/details/:workerId" element={<PaymentDetailsEnhanced />} />
             <Route path="/manager/settings" element={<Settings />} />
             <Route path="/admin/projects" element={<ProjectManagementPage />} />
           </Route>
