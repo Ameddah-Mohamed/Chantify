@@ -1,165 +1,267 @@
-import React, { useState } from 'react';
+// frontend/src/pages/Payments.jsx
+import React, { useState, useEffect } from 'react';
+import { paymentAPI } from '../../API/paymentAPI';
 
 const Payments = ({ onViewDetails }) => {
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [summary, setSummary] = useState({
+    totalPaid: 0,
+    totalUnpaid: 0,
+    totalWorkers: 0
+  });
+  
+  const [filters, setFilters] = useState({
+    status: 'all',
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
+  });
 
-  const workers = [
-    {
-      id: 1,
-      name: 'Alex Johnson',
-      tasks: 128,
-      totalSalary: 4500.00,
-      bonus: 200.00,
-      penalties: 0.00,
-      status: 'Paid'
-    },
-    {
-      id: 2,
-      name: 'Maria Garcia',
-      tasks: 95,
-      totalSalary: 3200.00,
-      bonus: 50.00,
-      penalties: 25.00,
-      status: 'Unpaid'
-    },
-    {
-      id: 3,
-      name: 'James Smith',
-      tasks: 150,
-      totalSalary: 5100.00,
-      bonus: 350.00,
-      penalties: 0.00,
-      status: 'Pending'
-    },
-    {
-      id: 4,
-      name: 'Olivia Williams',
-      tasks: 112,
-      totalSalary: 4050.00,
-      bonus: 150.00,
-      penalties: 50.00,
-      status: 'Paid'
-    },
-    {
-      id: 5,
-      name: 'David Chen',
-      tasks: 88,
-      totalSalary: 2900.00,
-      bonus: 0.00,
-      penalties: 0.00,
-      status: 'Unpaid'
-    }
-  ];
+  const [generating, setGenerating] = useState(false);
 
-  const getStatusBadgeClass = (status) => {
-    switch(status) {
-      case 'Paid':
-        return 'bg-green-100 text-green-800';
-      case 'Unpaid':
-        return 'bg-red-100 text-red-800';
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  useEffect(() => {
+    fetchPayments();
+  }, [filters]);
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const queryFilters = {};
+      
+      if (filters.status !== 'all') {
+        queryFilters.status = filters.status;
+      }
+      if (filters.month) {
+        queryFilters.month = filters.month;
+      }
+      if (filters.year) {
+        queryFilters.year = filters.year;
+      }
+
+      const response = await paymentAPI.getCompanyPayments(queryFilters);
+      setPayments(response.data || []);
+      setSummary(response.summary || { totalPaid: 0, totalUnpaid: 0, totalWorkers: 0 });
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch payments');
+      console.error('Error fetching payments:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const calculateFinalSalary = (totalSalary, bonus, penalties) => {
-    return totalSalary + bonus - penalties;
+  const handleGeneratePayments = async () => {
+    if (!window.confirm(`Generate payments for ${getMonthName(filters.month)} ${filters.year}?`)) {
+      return;
+    }
+
+    try {
+      setGenerating(true);
+      await paymentAPI.generateMonthlyPayments(filters.year, filters.month);
+      alert('Payments generated successfully!');
+      fetchPayments();
+    } catch (err) {
+      alert(err.message || 'Failed to generate payments');
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const handleRowClick = (worker) => {
-    onViewDetails(worker);
+  const handleToggleStatus = async (paymentId) => {
+    try {
+      await paymentAPI.togglePaymentStatus(paymentId);
+      fetchPayments();
+    } catch (err) {
+      alert(err.message || 'Failed to update payment status');
+    }
   };
+
+  const getMonthName = (month) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  };
+
+  const getStatusClass = (status) => {
+    return status === 'paid' 
+      ? 'bg-green-100 text-green-800' 
+      : 'bg-red-100 text-red-800';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex-1 pt-20 md:pt-8 pb-4 md:pb-8 px-4 md:px-8 bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading payments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 p-8 bg-white overflow-y-auto">
+    <div className="flex-1 pt-20 md:pt-8 pb-4 md:pb-8 px-4 md:px-8 bg-gray-50 overflow-y-auto">
       <div className="max-w-7xl mx-auto">
-        {/* Page Heading */}
+        {/* Header */}
         <header className="mb-6">
-          <h1 className="text-[#181511] text-3xl font-bold">Payment Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Payment Dashboard</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage worker payments and salaries
+          </p>
         </header>
 
         {/* Stats Section */}
-        <section className="grid grid-cols-3 gap-6 mb-8">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
           <div className="flex flex-col gap-2 rounded-xl p-6 bg-white border border-gray-200 shadow-sm">
-            <p className="text-gray-600 text-sm font-medium">Total Salaries Paid (This Month)</p>
-            <p className="text-gray-900 tracking-tight text-3xl font-bold">$125,430.00</p>
+            <p className="text-gray-600 text-sm font-medium">Total Paid</p>
+            <p className="text-green-600 text-2xl md:text-3xl font-bold">
+              {summary.totalPaid.toFixed(2)} DZD
+            </p>
           </div>
           <div className="flex flex-col gap-2 rounded-xl p-6 bg-white border border-gray-200 shadow-sm">
-            <p className="text-gray-600 text-sm font-medium">Total Unpaid Salaries</p>
-            <p className="text-gray-900 tracking-tight text-3xl font-bold">$48,210.50</p>
+            <p className="text-gray-600 text-sm font-medium">Total Unpaid</p>
+            <p className="text-red-600 text-2xl md:text-3xl font-bold">
+              {summary.totalUnpaid.toFixed(2)} DZD
+            </p>
           </div>
           <div className="flex flex-col gap-2 rounded-xl p-6 bg-white border border-gray-200 shadow-sm">
-            <p className="text-gray-600 text-sm font-medium">Total Active Workers</p>
-            <p className="text-gray-900 tracking-tight text-3xl font-bold">86</p>
+            <p className="text-gray-600 text-sm font-medium">Total Workers</p>
+            <p className="text-gray-900 text-2xl md:text-3xl font-bold">
+              {summary.totalWorkers}
+            </p>
           </div>
         </section>
 
-        {/* Toolbar & Filters */}
+        {/* Filters & Actions */}
         <section className="mb-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex gap-2">
-            {['All', 'Paid', 'Unpaid', 'Pending'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg px-4 transition-colors ${
-                  activeFilter === filter
-                    ? 'bg-[#1e2987] text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+              {/* Status Filter */}
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <p className="text-sm font-semibold">{filter}</p>
-              </button>
-            ))}
+                <option value="all">All Status</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+
+              {/* Month Filter */}
+              <select
+                value={filters.month}
+                onChange={(e) => setFilters({ ...filters, month: parseInt(e.target.value) })}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
+                  <option key={m} value={m}>{getMonthName(m)}</option>
+                ))}
+              </select>
+
+              {/* Year Filter */}
+              <select
+                value={filters.year}
+                onChange={(e) => setFilters({ ...filters, year: parseInt(e.target.value) })}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {[2024, 2025, 2026].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={handleGeneratePayments}
+              disabled={generating}
+              className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-semibold"
+            >
+              {generating ? 'Generating...' : 'Generate Payments'}
+            </button>
           </div>
         </section>
 
-        {/* Data Table */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Table */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500">
+            <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 font-semibold" scope="col">Worker Name</th>
-                  <th className="px-6 py-3 font-semibold" scope="col">Total Tasks</th>
-                  <th className="px-6 py-3 font-semibold" scope="col">Base Salary</th>
-                  <th className="px-6 py-3 font-semibold" scope="col">Bonus</th>
-                  <th className="px-6 py-3 font-semibold" scope="col">Penalties</th>
-                  <th className="px-6 py-3 font-semibold" scope="col">Final Salary</th>
-                  <th className="px-6 py-3 font-semibold" scope="col">Status</th>
+                  <th className="px-4 py-3 font-semibold">Worker</th>
+                  <th className="px-4 py-3 font-semibold">Job Type</th>
+                  <th className="px-4 py-3 font-semibold text-right">Hours</th>
+                  <th className="px-4 py-3 font-semibold text-right">Base Salary</th>
+                  <th className="px-4 py-3 font-semibold text-right">Bonus</th>
+                  <th className="px-4 py-3 font-semibold text-right">Penalties</th>
+                  <th className="px-4 py-3 font-semibold text-right">Total</th>
+                  <th className="px-4 py-3 font-semibold text-center">Status</th>
+                  <th className="px-4 py-3 font-semibold text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {workers
-                  .filter(worker => activeFilter === 'All' || worker.status === activeFilter)
-                  .map((worker, index) => (
-                  <tr
-                    key={index}
-                    onClick={() => handleRowClick(worker)}
-                    className="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                      {worker.name}
-                    </td>
-                    <td className="px-6 py-4">{worker.tasks}</td>
-                    <td className="px-6 py-4">${worker.totalSalary.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-green-500">
-                      ${worker.bonus.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-red-500">
-                      {worker.penalties > 0 ? `($${worker.penalties.toFixed(2)})` : '$0.00'}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">
-                      ${calculateFinalSalary(worker.totalSalary, worker.bonus, worker.penalties).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`${getStatusBadgeClass(worker.status)} text-xs font-medium px-2.5 py-0.5 rounded-full`}>
-                        {worker.status}
-                      </span>
+              <tbody className="divide-y divide-gray-200">
+                {payments.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="px-4 py-8 text-center text-gray-500">
+                      No payments found. Click "Generate Payments" to create them.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  payments.map((payment) => (
+                    <tr key={payment._id} className="bg-white hover:bg-gray-50 transition">
+                      <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        {payment.userId?.personalInfo?.firstName} {payment.userId?.personalInfo?.lastName}
+                      </td>
+                      <td className="px-4 py-4 text-gray-600">
+                        {payment.userId?.jobTypeId?.name || 'N/A'}
+                      </td>
+                      <td className="px-4 py-4 text-right text-gray-900">
+                        {payment.totalHours.toFixed(1)}h
+                      </td>
+                      <td className="px-4 py-4 text-right text-gray-900">
+                        {payment.baseSalary.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 text-right text-green-600">
+                        +{payment.bonus.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 text-right text-red-600">
+                        -{payment.penalties.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 text-right font-bold text-gray-900">
+                        {payment.finalAmount.toFixed(2)} DZD
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`${getStatusClass(payment.status)} text-xs font-medium px-2.5 py-1 rounded-full`}>
+                          {payment.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={() => onViewDetails(payment)}
+                            className="px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition"
+                          >
+                            Details
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(payment._id)}
+                            className={`px-3 py-1 text-xs font-medium rounded transition ${
+                              payment.status === 'paid'
+                                ? 'text-red-600 hover:bg-red-50'
+                                : 'text-green-600 hover:bg-green-50'
+                            }`}
+                          >
+                            {payment.status === 'paid' ? 'Unpay' : 'Pay'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

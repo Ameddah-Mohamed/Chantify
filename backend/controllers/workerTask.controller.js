@@ -1,15 +1,32 @@
-import WorkerTask from '../models/worker_Task.model.js';
+import WorkerTask from '../models/workerTask.model.js';
 import asyncHandler from 'express-async-handler';
 
-// @desc    Create or update worker task status
-// @route   POST /api/worker-tasks
+// @desc    Update worker task status
+// @route   PUT /api/worker-tasks/:taskId/:workerId/status
 // @access  Public
 const updateWorkerTaskStatus = asyncHandler(async (req, res) => {
-  const { taskId, workerId, status } = req.body;
+  const { taskId, workerId } = req.params;
+  const { status } = req.body;
+  
+  console.log('\n========== UPDATE WORKER TASK STATUS ==========');
+  console.log('TaskId:', taskId);
+  console.log('WorkerId:', workerId);
+  console.log('New Status:', status);
   
   if (!taskId || !workerId || !status) {
-    res.status(400);
-    throw new Error('TaskId, workerId, and status are required');
+    return res.status(400).json({
+      success: false,
+      error: 'TaskId, workerId, and status are required'
+    });
+  }
+  
+  // Validate status
+  const validStatuses = ['todo', 'in-progress', 'completed'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid status. Must be: todo, in-progress, or completed'
+    });
   }
   
   let workerTask = await WorkerTask.findOne({ taskId, workerId });
@@ -19,27 +36,40 @@ const updateWorkerTaskStatus = asyncHandler(async (req, res) => {
     workerTask = new WorkerTask({
       taskId,
       workerId,
-      status
+      status,
+      startedAt: status === 'in-progress' ? new Date() : null,
+      completedAt: status === 'completed' ? new Date() : null
     });
+    console.log('Created new worker task');
   } else {
     // Update existing worker task
+    const oldStatus = workerTask.status;
     workerTask.status = status;
-  }
-  
-  // Handle status transitions
-  if (status === 'in-progress' && workerTask.status !== 'in-progress') {
-    workerTask.startedAt = new Date();
-  }
-  
-  if (status === 'completed' && workerTask.status !== 'completed') {
-    workerTask.completedAt = new Date();
+    
+    // Handle status transitions
+    if (status === 'in-progress' && oldStatus !== 'in-progress') {
+      workerTask.startedAt = new Date();
+    }
+    
+    if (status === 'completed' && oldStatus !== 'completed') {
+      workerTask.completedAt = new Date();
+    }
+    
+    if (status === 'todo') {
+      workerTask.startedAt = null;
+      workerTask.completedAt = null;
+    }
+    
+    console.log('Updated existing worker task from', oldStatus, 'to', status);
   }
   
   await workerTask.save();
+  console.log('Worker task saved successfully');
   
   res.json({
     success: true,
-    data: workerTask
+    data: workerTask,
+    message: `Task status updated to ${status}`
   });
 });
 

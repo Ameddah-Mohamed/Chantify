@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TaskCard from "../../components/TaskCard";
-import WorkerNavbar from "../../components/WorkerNavbar";
 import { taskAPI } from "../../API/taskAPI";
 import { workerTaskAPI } from "../../API/workerTaskAPI";
 
@@ -123,14 +122,13 @@ export default function WeeklyTaskPage() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<WorkerNavbar title="Weekly Tasks" />
 			<main className="max-w-7xl mx-auto p-4 space-y-6">
 				<div className="flex justify-between items-center mb-6">
 					<h1 className="text-2xl font-bold text-gray-900">Weekly Tasks</h1>
 					<button 
 						onClick={fetchTasksAndStatuses}
-						className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-					>
+						className="px-4 py-2 bg-[#f3ae3f] text-white rounded-lg hover:bg-[#e09d2f] transition"
+						>
 						Refresh
 					</button>
 				</div>

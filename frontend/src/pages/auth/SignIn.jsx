@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, Building2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
@@ -9,7 +10,9 @@ const SignIn = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  
+  // ✨ Utiliser le hook useAuth pour accéder au context
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -30,7 +33,7 @@ const SignIn = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'include', // Important pour recevoir les cookies
         body: JSON.stringify(formData),
       });
   
@@ -40,14 +43,9 @@ const SignIn = () => {
         throw new Error(data.error || 'Connection error');
       }
   
-      // Redirect based on user role
-      if (data.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (data.role === 'worker') {
-        navigate('/worker/dashboard');
-      } else {
-        navigate('/dashboard'); // fallback
-      }
+      // ✨ Utiliser login() du context au lieu de navigate manuellement
+      // login() va stocker le user ET faire la redirection automatiquement
+      login(data);
   
     } catch (err) {
       setError(err.message);
@@ -57,7 +55,7 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-6">
@@ -122,7 +120,6 @@ const SignIn = () => {
                 />
               </div>
             </div>
-
 
             {/* Submit Button */}
             <button

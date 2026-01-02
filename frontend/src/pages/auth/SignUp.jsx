@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, User, Phone, Building2, Briefcase, Wrench } from 'lucide-react';
+import { Mail, Lock, User, Phone, Building2, Briefcase, Wrench, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const SignUp = () => {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -82,6 +84,7 @@ const SignUp = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
@@ -91,14 +94,28 @@ const SignUp = () => {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      setSuccess(data.message);
-      
-      // If admin, redirect to dashboard after 2 seconds
-      if (formData.role === 'admin') {
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 2000);
+      // ✅ SI ADMIN : Rediriger immédiatement
+      if (data.role === 'admin') {
+        login(data);
+      } 
+      // ✅ SI WORKER : Afficher message de succès et rester sur la page
+      else {
+        setSuccess('Account created successfully! Your application is pending approval from the administrator. You will receive an email once approved.');
+        // Réinitialiser le formulaire
+        setFormData({
+          email: '',
+          password: '',
+          firstName: '',
+          lastName: '',
+          phone: '',
+          role: 'worker',
+          companyName: '',
+          companyEmail: '',
+          jobTypeId: ''
+        });
+        setJobTypes([]);
       }
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -132,8 +149,20 @@ const SignUp = () => {
           )}
 
           {success && (
-            <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 rounded-lg">
-              <p className="text-green-700 text-xs">{success}</p>
+            <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-green-800 text-sm font-semibold mb-1">Application Submitted!</p>
+                  <p className="text-green-700 text-xs">{success}</p>
+                  <Link 
+                    to="/signin" 
+                    className="inline-block mt-3 text-sm text-green-700 font-semibold hover:underline"
+                  >
+                    Go to Sign In →
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 

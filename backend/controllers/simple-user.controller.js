@@ -1,82 +1,115 @@
 import asyncHandler from 'express-async-handler';
+import User from '../models/user.model.js';
 
-// Simple mock users for demo (replace with real DB query when User model is converted to CommonJS)
-const mockUsers = [
-  {
-    _id: '1',
-    personalInfo: {
-      firstName: 'John',
-      lastName: 'Smith',
-      profilePicture: ''
-    },
-    email: 'john.smith@example.com',
-    role: 'worker'
-  },
-  {
-    _id: '2',
-    personalInfo: {
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      profilePicture: ''
-    },
-    email: 'sarah.j@example.com',
-    role: 'worker'
-  },
-  {
-    _id: '3',
-    personalInfo: {
-      firstName: 'Mike',
-      lastName: 'Davis',
-      profilePicture: ''
-    },
-    email: 'mike.d@example.com',
-    role: 'worker'
-  },
-  {
-    _id: '4',
-    personalInfo: {
-      firstName: 'Emma',
-      lastName: 'Wilson',
-      profilePicture: ''
-    },
-    email: 'emma.w@example.com',
-    role: 'worker'
-  },
-  {
-    _id: '5',
-    personalInfo: {
-      firstName: 'James',
-      lastName: 'Brown',
-      profilePicture: ''
-    },
-    email: 'james.b@example.com',
-    role: 'worker'
-  }
-];
-
-// @desc    Get all users (simplified for demo)
+// @desc    Get all workers for admin to select
 // @route   GET /api/users
 // @access  Public
 const getUsers = asyncHandler(async (req, res) => {
-  const { search } = req.query;
-  
-  let users = mockUsers;
-  
-  // Filter by search term
-  if (search) {
-    const searchLower = search.toLowerCase();
-    users = users.filter(user => 
-      user.personalInfo.firstName.toLowerCase().includes(searchLower) ||
-      user.personalInfo.lastName.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower)
-    );
+  try {
+    const { search } = req.query;
+    
+    console.log('\n========== GET USERS REQUEST ==========');
+    console.log('Search term:', search);
+    
+    // Build query for workers only
+    let query = { 
+      role: 'worker',
+      isActive: true
+    };
+    
+    console.log('Base query:', query);
+    
+    // Add search functionality
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { 'personalInfo.firstName': searchRegex },
+        { 'personalInfo.lastName': searchRegex },
+        { email: searchRegex }
+      ];
+      console.log('Search query:', query);
+    }
+    
+    // Fetch workers from database
+    let users = await User.find(query)
+      .select('personalInfo email role companyId jobTypeId isActive')
+      .populate('jobTypeId', 'name hourlyRate')
+      .populate('companyId', 'name')
+      .sort({ 'personalInfo.firstName': 1 });
+    
+    // If no active workers found, try to find any users with worker role (including inactive)
+    if (users.length === 0 && !search) {
+      console.log('No active workers found, checking all workers...');
+      const allWorkers = await User.find({ role: 'worker' })
+        .select('personalInfo email role companyId jobTypeId isActive')
+        .populate('jobTypeId', 'name hourlyRate')
+        .populate('companyId', 'name')
+        .sort({ 'personalInfo.firstName': 1 });
+      
+      console.log('All workers (including inactive):', allWorkers.length);
+      users = allWorkers;
+    }
+    
+    // If still no workers, check all users
+    if (users.length === 0) {
+      console.log('No workers found, checking all users...');
+      const allUsers = await User.find({})
+        .select('personalInfo email role companyId jobTypeId isActive')
+        .populate('jobTypeId', 'name hourlyRate')
+        .populate('companyId', 'name')
+        .sort({ 'personalInfo.firstName': 1 });
+      
+      console.log('All users in database:', allUsers.length);
+      users = allUsers;
+    }
+    
+    console.log('Found users:', users.length);
+    console.log('Users data:', users.map(u => ({
+      id: u._id,
+      name: `${u.personalInfo.firstName} ${u.personalInfo.lastName}`,
+      email: u.email,
+      role: u.role,
+      isActive: u.isActive
+    })));
+    
+    res.json({
+      success: true,
+      count: users.length,
+      data: users
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch users'
+    });
   }
-  
-  res.json({
-    success: true,
-    count: users.length,
-    data: users
-  });
 });
 
 export { getUsers };
+
+// Test endpoint to check all users
+export const getAllUsersTest = async (req, res) => {
+  try {
+    const allUsers = await User.find({})
+      .select('personalInfo email role isActive')
+      .sort({ createdAt: -1 });
+    
+    console.log('All users in database:', allUsers.length);
+    allUsers.forEach(user => {
+      console.log(`- ${user.personalInfo.firstName} ${user.personalInfo.lastName} (${user.email}) - Role: ${user.role}, Active: ${user.isActive}`);
+    });
+    
+    res.json({
+      success: true,
+      count: allUsers.length,
+      data: allUsers
+    });
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch all users'
+    });
+  }
+};

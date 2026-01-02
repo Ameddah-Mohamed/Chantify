@@ -1,94 +1,88 @@
 // backend/controllers/company.controller.js
-import Company from "../models/company.model.js";
 import User from "../models/user.model.js";
+import Company from "../models/company.model.js";
 
-// Get company profile
+// Get company information
 export const getCompany = async (req, res) => {
   try {
     const company = await Company.findById(req.user.companyId);
-    
+
     if (!company) {
       return res.status(404).json({ error: "Company not found" });
     }
 
     res.status(200).json(company);
   } catch (error) {
-    console.log("ERROR in getCompany controller", error.message);
+    console.log("ERROR in getCompany", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// Update company info (admin only)
+// Update company information
 export const updateCompany = async (req, res) => {
   try {
-    const { name, contact, settings } = req.body;
-
-    // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admin can update company information" });
     }
 
-    const updatedCompany = await Company.findByIdAndUpdate(
+    const { name, phone, address } = req.body;
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData['contact.phone'] = phone;
+    if (address) updateData['contact.address'] = address;
+
+    const company = await Company.findByIdAndUpdate(
       req.user.companyId,
-      {
-        ...(name && { name }),
-        ...(contact && { contact }),
-        ...(settings && { settings })
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
-    if (!updatedCompany) {
-      return res.status(404).json({ error: "Company not found" });
-    }
-
     res.status(200).json({
       message: "Company updated successfully",
-      company: updatedCompany
+      company
     });
   } catch (error) {
-    console.log("ERROR in updateCompany controller", error.message);
+    console.log("ERROR in updateCompany", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// List all company users (active team members)
+// Get all users (workers) in the company
 export const getCompanyUsers = async (req, res) => {
   try {
-    const company = await Company.findById(req.user.companyId)
-      .populate({
-        path: 'teamMembers',
-        select: '-password',
-        populate: { path: 'jobTypeId', select: 'name hourlyRate' }
-      })
-      .select('teamMembers');
+    const users = await User.find({
+      companyId: req.user.companyId,
+      role: 'worker'
+    })
+      .select('-password')
+      .populate('jobTypeId')
+      .sort({ createdAt: -1 });
 
-    if (!company) {
-      return res.status(404).json({ error: "Company not found" });
-    }
-
-    res.status(200).json(company.teamMembers);
+    res.status(200).json(users);
   } catch (error) {
-    console.log("ERROR in getCompanyUsers controller", error.message);
+    console.log("ERROR in getCompanyUsers", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// Get pending applications with user details
+// Get pending applications
 export const getPendingApplications = async (req, res) => {
   try {
-    const company = await Company.findById(req.user.companyId)
-      .populate({
-        path: 'pendingApplications',
-        select: 'email personalInfo hourlyRate appliedAt jobTypeId',
-        populate: { path: 'jobTypeId', select: 'name hourlyRate' }
-      });
-
-    if (!company) {
-      return res.status(404).json({ error: "Company not found" });
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admin can view pending applications" });
     }
 
-    res.status(200).json(company.pendingApplications);
+    const pendingUsers = await User.find({
+      companyId: req.user.companyId,
+      role: 'worker',
+      applicationStatus: 'pending'
+    })
+      .select('-password')
+      .populate('jobTypeId')
+      .sort({ appliedAt: -1 });
+
+    res.status(200).json(pendingUsers);
   } catch (error) {
     console.log("ERROR in getPendingApplications", error.message);
     res.status(500).json({ error: "Internal Server Error" });
@@ -98,40 +92,42 @@ export const getPendingApplications = async (req, res) => {
 // Approve application
 export const approveApplication = async (req, res) => {
   try {
-    const { userId } = req.body;
-
-    const company = await Company.findById(req.user.companyId);
-    const user = await User.findById(userId).populate('jobTypeId');
-
-    if (!company || !user || user.companyId.toString() !== company._id.toString()) {
-      return res.status(404).json({ error: "Application not found" });
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admin can approve applications" });
     }
 
-    // Update user status
-    user.isActive = true;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const user = await User.findOne({
+      _id: userId,
+      companyId: req.user.companyId
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
     user.applicationStatus = 'approved';
+    user.isActive = true;
     user.reviewedAt = new Date();
     user.reviewedBy = req.user._id;
+
     await user.save();
 
-    // Move user from pending to team members
-    company.pendingApplications = company.pendingApplications.filter(
-      appId => appId.toString() !== userId
-    );
-    company.teamMembers.push(user._id);
-    await company.save();
+    // Remove from pending applications and add to team members
+    await Company.findByIdAndUpdate(req.user.companyId, {
+      $pull: { pendingApplications: userId },
+      $addToSet: { teamMembers: userId }
+    });
 
     res.status(200).json({
       message: "Application approved successfully",
-      user: {
-        _id: user._id,
-        email: user.email,
-        personalInfo: user.personalInfo,
-        hourlyRate: user.hourlyRate,
-        jobType: user.jobTypeId
-      }
+      user
     });
-
   } catch (error) {
     console.log("ERROR in approveApplication", error.message);
     res.status(500).json({ error: "Internal Server Error" });
@@ -141,33 +137,153 @@ export const approveApplication = async (req, res) => {
 // Reject application
 export const rejectApplication = async (req, res) => {
   try {
-    const { userId } = req.body;
-
-    const company = await Company.findById(req.user.companyId);
-    const user = await User.findById(userId);
-
-    if (!company || !user || user.companyId.toString() !== company._id.toString()) {
-      return res.status(404).json({ error: "Application not found" });
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admin can reject applications" });
     }
 
-    // Update user status
-    user.applicationStatus = 'rejected';
-    user.reviewedAt = new Date();
-    user.reviewedBy = req.user._id;
-    await user.save();
+    const { userId } = req.body;
 
-    // Remove user from pending applications
-    company.pendingApplications = company.pendingApplications.filter(
-      appId => appId.toString() !== userId
-    );
-    await company.save();
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
 
-    res.status(200).json({
-      message: "Application rejected successfully"
+    const user = await User.findOne({
+      _id: userId,
+      companyId: req.user.companyId
     });
 
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.applicationStatus = 'rejected';
+    user.isActive = false;
+    user.reviewedAt = new Date();
+    user.reviewedBy = req.user._id;
+
+    await user.save();
+
+    // Remove from pending applications
+    await Company.findByIdAndUpdate(req.user.companyId, {
+      $pull: { pendingApplications: userId }
+    });
+
+    res.status(200).json({
+      message: "Application rejected",
+      user
+    });
   } catch (error) {
     console.log("ERROR in rejectApplication", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Update worker information (admin only)
+export const updateWorker = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admin can update worker information" });
+    }
+
+    const { userId } = req.params;
+    const { firstName, lastName, phone, jobTypeId, hourlyRate } = req.body;
+
+    const user = await User.findOne({
+      _id: userId,
+      companyId: req.user.companyId,
+      role: 'worker'
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Worker not found" });
+    }
+
+    // Update fields
+    if (firstName) user.personalInfo.firstName = firstName;
+    if (lastName) user.personalInfo.lastName = lastName;
+    if (phone) user.personalInfo.phone = phone;
+    if (jobTypeId) user.jobTypeId = jobTypeId;
+    if (hourlyRate !== undefined) user.hourlyRate = hourlyRate;
+
+    await user.save();
+    await user.populate('jobTypeId');
+
+    res.status(200).json({
+      message: "Worker updated successfully",
+      user
+    });
+  } catch (error) {
+    console.log("ERROR in updateWorker", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Delete worker (admin only)
+export const deleteWorker = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admin can delete workers" });
+    }
+
+    const { userId } = req.params;
+
+    const user = await User.findOne({
+      _id: userId,
+      companyId: req.user.companyId,
+      role: 'worker'
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Worker not found" });
+    }
+
+    // Remove from company's team members
+    await Company.findByIdAndUpdate(req.user.companyId, {
+      $pull: { 
+        teamMembers: userId,
+        pendingApplications: userId 
+      }
+    });
+
+    await user.deleteOne();
+
+    res.status(200).json({
+      message: "Worker deleted successfully"
+    });
+  } catch (error) {
+    console.log("ERROR in deleteWorker", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Toggle worker active status (admin only)
+export const toggleWorkerStatus = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Only admin can toggle worker status" });
+    }
+
+    const { userId } = req.params;
+
+    const user = await User.findOne({
+      _id: userId,
+      companyId: req.user.companyId,
+      role: 'worker'
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Worker not found" });
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.status(200).json({
+      message: `Worker ${user.isActive ? 'activated' : 'deactivated'} successfully`,
+      user
+    });
+  } catch (error) {
+    console.log("ERROR in toggleWorkerStatus", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

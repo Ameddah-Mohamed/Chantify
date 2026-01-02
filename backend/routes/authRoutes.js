@@ -1,10 +1,13 @@
 import express from 'express';
+// Import the controller functions
 import { 
   signup, 
   login, 
   logout, 
   getMe 
-} from '../controllers/auth.controller.js';
+} from '../controllers/auth.controller.js'; 
+
+// Import the middleware
 import { protectRoute } from '../middleware/protectRoute.js';
 
 const router = express.Router();

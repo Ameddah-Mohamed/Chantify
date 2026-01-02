@@ -1,4 +1,3 @@
-
 // server.js
 import express from "express";
 import dotenv from "dotenv";
@@ -10,47 +9,38 @@ import cors from 'cors';
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import jobTypeRoutes from "./routes/jobTypeRoutes.js"
-
+import jobTypeRoutes from "./routes/jobTypeRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import simpleUserRoutes from "./routes/simpleUserRoutes.js";
+import dashboardRoutes from './routes/dashboard.routes.js';
+import timeEntryRoutes from "./routes/timeEntry.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import workerTaskRoutes from "./routes/workerTaskRoutes.js";
 
 // Load environment variables
-dotenv.config();
-
-// Import routes
-import taskRoutes from './routes/taskRoutes.js';
-import simpleUserRoutes from './routes/simpleUserRoutes.js';
-import workerTaskRoutes from './routes/workerTaskRoutes.js';
-// const authRoutes = require('./routes/authRoutes');
-// const companyRoutes = require('./routes/companyRoutes');
-// const userRoutes = require('./routes/userRoutes');
+dotenv.config({ path: './.env' });
 
 const app = express();
 
-// Connect to MongoDB (non-blocking)
-connectDB().catch((error) => {
-  console.log('⚠️ MongoDB connection failed, continuing without database');
-});
-
-// CORS Configuration 
+// Middleware
 app.use(cors({
   origin: "http://localhost:5173",
   credentials: true
 }));
-
-// Middleware
 app.use(cookieParser());
 app.use(express.json());
 
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/users", simpleUserRoutes); // Changed to use simpleUserRoutes for workers
 app.use("/api/jobtypes", jobTypeRoutes);
-
-// app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/users', simpleUserRoutes);
 app.use('/api/worker-tasks', workerTaskRoutes);
-// app.use('/api/companies', companyRoutes);
+app.use('/api/simple-users', simpleUserRoutes); 
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/time-entries', timeEntryRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -70,9 +60,19 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Start server only after connecting to MongoDB
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(` Server running on port ${PORT}`);
-  console.log(` MongoDB: ${process.env.MONGO_URI || 'Not configured'}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();  // connectDB() is called only once
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('⚠️ MongoDB connection failed:', err.message);
+    process.exit(1); // stop server if DB fails
+  }
+};
+
+startServer();

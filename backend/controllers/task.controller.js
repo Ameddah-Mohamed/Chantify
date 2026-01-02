@@ -1,5 +1,5 @@
 import Task from '../models/task.model.js';
-import WorkerTask from '../models/worker_Task.model.js';
+import WorkerTask from '../models/workerTask.model.js';
 import asyncHandler from 'express-async-handler';
 
 // @desc    Create a new task
@@ -8,6 +8,15 @@ import asyncHandler from 'express-async-handler';
 const createTask = asyncHandler(async (req, res) => {
   const { companyId, assignedTo, assignedBy, title, description, project, dueDate, location } = req.body;
   
+  // Validate required fields
+  if (!title || !assignedTo || assignedTo.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Task title and at least one worker assignment is required'
+    });
+  }
+  
+  // Create the main task
   const task = await Task.create({
     companyId: companyId || null,
     assignedTo: assignedTo || [],
@@ -20,9 +29,26 @@ const createTask = asyncHandler(async (req, res) => {
     approved: false
   });
   
+  // Create individual worker tasks for each assigned worker
+  const workerTasks = [];
+  for (const workerId of assignedTo) {
+    const workerTask = await WorkerTask.create({
+      taskId: task._id,
+      workerId: workerId,
+      status: 'todo',
+      completedAt: null,
+      proofOfProgress: []
+    });
+    workerTasks.push(workerTask);
+  }
+  
   res.status(201).json({
     success: true,
-    data: task
+    data: {
+      task,
+      workerTasks
+    },
+    message: `Task created and assigned to ${assignedTo.length} worker(s)`
   });
 });
 

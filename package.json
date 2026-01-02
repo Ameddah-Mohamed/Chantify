@@ -4,11 +4,13 @@
   "description": "",
   "type": "module",
   "main": "backend/server.js",
-  "scripts": {
-    "dev": "nodemon backend/server.js",
-    "start": "node backend/server.js",
-    "test:db": "node backend/test-db.js"
-  },
+ "scripts": {
+  "backend": "nodemon backend/server.js",
+  "frontend": "npm run dev --prefix frontend",
+  "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+  "start": "node backend/server.js",
+  "test:db": "node backend/test-db.js"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Ameddah-Mohamed/Chantify.git"
@@ -32,6 +34,7 @@
     "mongoose": "^8.19.2"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.10"
   }
 }

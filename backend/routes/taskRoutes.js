@@ -1,7 +1,15 @@
 import express from 'express';
-import { createTask, getCompanyTasks, getAllTasks, getUserTasks, updateTask, deleteTask, getTasksForApproval, approveTask } from '../controllers/task.controller.js';
-
+import { getTasksForApproval } from '../controllers/task.controller.js';
 const router = express.Router();
+
+
+import {
+  createTask,
+  getCompanyTasks,
+  getAllTasks,
+  updateTask,
+  deleteTask
+} from '../controllers/task.controller.js';
 
 // Routes (no authentication required)
 router.route('/')
@@ -18,11 +26,8 @@ router.route('/user/:userId')
   .get(getUserTasks);
 
 router.route('/:id')
-  .get(getAllTasks)
+  .get(getAllTasks) // Note: Usually this is a 'getOneTask' function
   .put(updateTask)
   .delete(deleteTask);
-
-router.route('/:id/approve')
-  .put(approveTask);
 
 export default router;
